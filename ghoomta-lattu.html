@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>घूमता लट्टू</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap">
+<style>
+/* PadhAI Practice Framework tokens + कंचे (top-down courtyard) */
+:root {
+  --screen:#F3F7F8; --ink:#16323C; --ink-soft:#546D79; --ink-muted:#7E949C;
+  --teal-600:#12809B; --teal-700:#0B6076; --teal-200:#C4E0E8; --teal-100:#E3F1F5;
+  --green-600:#1E9E4A; --green-700:#136B33; --green-100:#E4F4E8;
+  --warm-700:#7A5809; --warm-ink:#6B4E08; --warm-100:#FDF3DC;
+  --stage:#12191C; --stage-chip:#1D272C; --bezel:#0A1013; --bezel-edge:#26343A;
+  --stage-ink:#DCE6EA; --stage-ink-soft:#A7B8BF; --stage-ink-faint:#7E949C;
+  --mud:#E6CC9C; --mud-ink:#3B2A12; --mud-soft:#6E5332; --jute:#D6B47D;
+  --p1:#12809B; --p1-dark:#0B6076; --p2:#6B4FA0; --p2-dark:#4E3778;
+  --paper:#FFFDF6; --wood:#8A5A3B;
+  --font-ui:'Baloo 2', system-ui, sans-serif;
+  --font-deva:'Noto Sans Devanagari','Devanagari Sangam MN', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+* { box-sizing:border-box; }
+html, body { margin:0; padding:0; background:var(--stage); }
+body { font-family:var(--font-ui); color:var(--stage-ink); }
+button { font:inherit; color:inherit; border:none; background:none; padding:0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+
+@keyframes kc-glow { 0%,100% { box-shadow:0 4px 4px rgba(80,55,20,.4), 0 0 0 0 rgba(255,255,255,0); } 50% { box-shadow:0 4px 4px rgba(80,55,20,.4), 0 0 0 9px rgba(255,255,255,.75); } }
+@keyframes kc-unfold { from { transform:scaleY(.15) rotate(-1.2deg); opacity:0; } to { transform:scaleY(1) rotate(-1.2deg); opacity:1; } }
+@keyframes kc-pop { 0% { transform:scale(.5); opacity:0; } 70% { transform:scale(1.08); opacity:1; } 100% { transform:scale(1); } }
+@keyframes kc-bars { 0%,100% { transform:scaleY(.3); } 50% { transform:scaleY(1); } }
+@keyframes kc-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+@keyframes kc-hand { 0% { transform:translate(0,0); opacity:0; } 15% { opacity:1; } 70% { transform:translate(0,46px); opacity:1; } 100% { transform:translate(0,46px); opacity:0; } }
+@keyframes kc-ring { 0%,100% { box-shadow:0 0 0 0 rgba(18,128,155,0); } 50% { box-shadow:0 0 0 6px rgba(18,128,155,.45); } }
+
+/* ---------- reviewer stage ---------- */
+.stage { min-height:100vh; padding:24px 28px 60px; display:flex; flex-direction:column; gap:18px; align-items:center; }
+.st-head { width:100%; max-width:1080px; display:flex; flex-direction:column; gap:6px; }
+.st-title { font-size:20px; font-weight:700; color:var(--stage-ink); }
+.st-title span { color:var(--stage-ink-faint); font-weight:600; }
+.st-meta { font-size:12px; font-family:var(--font-mono); color:var(--stage-ink-faint); line-height:1.5; }
+.st-body { display:flex; gap:28px; align-items:flex-start; justify-content:center; flex-wrap:wrap; width:100%; max-width:1080px; }
+.st-side { width:420px; max-width:100%; display:flex; flex-direction:column; gap:12px; }
+.st-label { font-size:11px; font-family:var(--font-mono); color:var(--stage-ink-faint); margin-bottom:-4px; }
+.st-chips { display:flex; gap:7px; flex-wrap:wrap; }
+.st-chip { min-width:40px; height:36px; padding:0 11px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; background:var(--stage-chip); color:var(--stage-ink-soft); }
+.st-chip.on { background:var(--teal-600); color:#fff; }
+.st-chip.deva { font-family:var(--font-deva); font-size:15px; }
+.st-chip.warn { border:1px dashed #5E7A84; }
+.st-rung { font-size:13px; color:var(--stage-ink-soft); font-weight:600; line-height:1.5; }
+.st-rmeta { font-family:var(--font-mono); font-size:11px; color:var(--stage-ink-faint); line-height:1.6; word-break:break-word; }
+.st-note { font-size:12px; color:var(--stage-ink-faint); line-height:1.6; }
+.st-note b { color:var(--stage-ink-soft); }
+.st-box { border:1px dashed #33434A; background:#182126; border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
+.st-log { width:100%; border-collapse:collapse; font-size:11px; font-family:var(--font-mono); color:var(--stage-ink-soft); }
+.st-log td, .st-log th { padding:3px 4px; border-bottom:1px solid #26343A; text-align:left; vertical-align:top; }
+.st-log th { color:var(--stage-ink-faint); font-weight:600; }
+.st-log .deva { font-family:var(--font-deva); font-size:12px; }
+.st-log .g { color:#7FD49A; } .st-log .w { color:#F0A07A; } .st-log .m { color:var(--stage-ink-faint); }
+
+/* ---------- phone ---------- */
+.bezel { width:384px; padding:12px; border-radius:40px; background:var(--bezel); border:2px solid var(--bezel-edge); flex:none; }
+.status { height:24px; display:flex; align-items:center; justify-content:space-between; padding:0 12px 3px; font-size:11px; font-weight:600; color:#B7C6CC; }
+.home-bar { height:20px; display:flex; align-items:center; justify-content:center; padding-top:4px; }
+.home-bar i { width:118px; height:5px; border-radius:999px; background:var(--bezel-edge); }
+.screen { width:360px; height:720px; border-radius:28px; overflow:hidden; background:var(--mud); position:relative; color:var(--mud-ink); user-select:none; -webkit-user-select:none; touch-action:none; transform-origin:top left; }
+
+/* on a real phone: no reviewer chrome, the game fills the screen */
+body.phone .stage { padding:0; min-height:100vh; gap:0; justify-content:center; background:#2A1E10; }
+body.phone .st-head, body.phone .st-side, body.phone .status, body.phone .home-bar { display:none; }
+body.phone .st-body { gap:0; max-width:none; }
+body.phone .bezel { padding:0; border:none; border-radius:0; background:none; width:auto; overflow:hidden; }
+body.phone .screen { border-radius:0; }
+
+/* ---------- courtyard ---------- */
+.kc { position:absolute; inset:0; overflow:hidden; background:radial-gradient(ellipse at 50% 48%, #F2E0BC 0%, #E8CF9F 55%, #D8B984 100%); font-family:var(--font-ui); color:var(--mud-ink); }
+.kc-layer { position:absolute; inset:0; pointer-events:none; }
+.kc-layer svg { position:absolute; left:0; top:0; }
+.kc-shadow { position:absolute; right:-36px; top:172px; width:180px; height:160px; opacity:.14; transform-origin:85% 10%; transition:transform 1.4s ease, opacity 1.4s ease; pointer-events:none; }
+.kc-dusk { position:absolute; inset:0; pointer-events:none; mix-blend-mode:multiply; transition:background-color 1.4s ease; }
+.kc-marbles { position:absolute; inset:0; pointer-events:none; }
+.kc-aim { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; }
+
+.kc-marble { position:absolute; left:0; top:0; width:50px; height:50px; margin:-25px 0 0 -25px; border-radius:50%; will-change:transform; display:flex; align-items:center; justify-content:center;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 7%, rgba(255,255,255,0) 19%),
+    radial-gradient(circle at 50% 54%, #FCFBF5 0 55%, var(--sw) 59% 80%, var(--sw2) 100%);
+  box-shadow:0 3px 3px rgba(80,55,20,.38), inset 0 -2px 4px rgba(0,0,0,.14); transition:opacity .3s ease; }
+.kc-marble::before { content:''; position:absolute; inset:3px; border-radius:50%; border:3px solid transparent; border-top-color:rgba(255,255,255,.55); border-left-color:rgba(255,255,255,.2); transform:rotate(var(--sr)); }
+.kc-marble.out { opacity:.62; }
+.kc-marble.gone { opacity:0; }
+.kc-lbl { position:relative; font-family:var(--font-deva); font-weight:700; color:#16323C; line-height:1; white-space:nowrap; transition:transform .45s ease; }
+.kc-marbles[data-face="p2"] .kc-lbl { transform:rotate(180deg); }
+.kc-striker { position:absolute; left:0; top:0; width:46px; height:46px; margin:-23px 0 0 -23px; border-radius:50%; will-change:transform;
+  background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 21%), radial-gradient(circle at 50% 56%, var(--pc) 0 55%, var(--pcd) 100%);
+  box-shadow:0 4px 4px rgba(80,55,20,.4); transition:opacity .25s ease; }
+.kc-striker::after { content:''; position:absolute; inset:9px; border-radius:50%; border:3px solid rgba(255,255,255,.45); border-right-color:transparent; border-bottom-color:transparent; transform:rotate(25deg); }
+.kc-striker.hidden { opacity:0; }
+.kc-striker.ready { animation:kc-glow 1.4s ease-in-out infinite; }
+
+/* ===================== game: one frame for every screen ===================== */
+@keyframes pop { 0% { transform:scale(.6); opacity:0; } 70% { transform:scale(1.06); opacity:1; } 100% { transform:scale(1); } }
+@keyframes shake { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-7px); } 40% { transform:translateX(6px); } 60% { transform:translateX(-4px); } 80% { transform:translateX(3px); } }
+@keyframes glow { 0%,100% { opacity:.2; } 50% { opacity:.85; } }
+@keyframes bob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-12px); } }
+@keyframes bump { 0%,100% { transform:scale(1); } 40% { transform:scale(1.35); } }
+@keyframes fadein { from { opacity:0; } to { opacity:1; } }
+@keyframes bn-in { 0% { transform:translateY(24px) scale(.85); opacity:0; } 100% { transform:none; opacity:1; } }
+@keyframes demo { 0% { transform:translate(0,0); opacity:0; } 12% { transform:translate(0,0); opacity:1; } 62% { transform:translate(var(--dx), var(--dy)); opacity:1; } 82% { transform:translate(var(--dx), var(--dy)); opacity:1; } 100% { transform:translate(var(--dx), var(--dy)); opacity:0; } }
+@keyframes conf { 0% { transform:translate(0,0) rotate(0); opacity:1; } 100% { transform:translate(calc((var(--i) - 7) * 22px), 150px) rotate(calc(var(--i) * 70deg)); opacity:0; } }
+.grow { flex:1; min-width:0; }
+
+/* top: the two children */
+.top { height:60px; flex:none; display:flex; align-items:center; gap:6px; padding:0 8px; background:#F5E8CB; box-shadow:0 2px 0 rgba(120,85,40,.18); position:relative; z-index:3; }
+.top-back { width:36px; height:36px; border-radius:50%; background:#FFFBF2; color:var(--mud-ink); display:flex; align-items:center; justify-content:center; flex:none; box-shadow:0 2px 0 #D8C39A; }
+.tc { flex:1; min-width:0; height:46px; border-radius:23px; background:#FFFBF2; border:2.5px solid #E2CFA8; display:flex; align-items:center; gap:4px; padding:0 4px 0 2px; color:var(--mud-ink); opacity:.72; transition:all .25s; }
+.tc.on { background:var(--pc); border-color:var(--pcd); color:#fff; opacity:1; box-shadow:0 3px 0 var(--pcd); }
+.tc-av { width:34px; height:34px; border-radius:50%; background:#FFF8EA; border:2.5px solid var(--pc); display:inline-flex; align-items:flex-end; justify-content:center; overflow:hidden; flex:none; }
+.tc.on .tc-av { border-color:#fff; }
+.tc-name { flex:1; min-width:0; font:700 16px/1 var(--font-deva); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-top:2px; }
+.tc-n { min-width:30px; height:30px; border-radius:15px; background:rgba(59,42,18,.08); display:flex; align-items:center; justify-content:center; font:800 19px var(--font-ui); flex:none; }
+.tc.on .tc-n { background:rgba(255,255,255,.25); }
+.tc.bump .tc-n { animation:bump .5s ease .75s; }
+
+/* bottom: Mitthu's line + the work */
+.cb-unused { flex:1; min-height:0; padding:10px 12px 14px; display:flex; flex-direction:column; gap:8px; background:linear-gradient(#E8D2A6, #DFC594); position:relative; }
+.ph-pick .cb, .ph-end .cb { justify-content:center; }
+.mb { display:flex; align-items:center; gap:6px; flex:none; }
+.mb-m { flex:none; display:flex; }
+.mb-b { flex:1; min-width:0; min-height:52px; background:#FFFDF6; border-radius:18px; padding:5px 6px 5px 16px; display:flex; align-items:center; gap:8px; box-shadow:0 3px 0 rgba(120,85,40,.25); position:relative; }
+.mb-b::before { content:''; position:absolute; left:-9px; top:50%; margin-top:-8px; border:8px solid transparent; border-right:11px solid #FFFDF6; border-left:0; }
+.mb-t { flex:1; min-width:0; font:700 21px/1.25 var(--font-deva); color:#1F2D33; animation:fadein .25s; }
+.mb-spk { width:42px; height:42px; border-radius:50%; background:var(--teal-100); color:var(--teal-700); display:flex; align-items:center; justify-content:center; flex:none; }
+.mb.big .mb-b { min-height:72px; padding-left:18px; }
+.mb.big .mb-t { font-size:26px; }
+.mb-b.good .mb-t { color:var(--green-700); font-size:24px; }
+.mb-b.again { box-shadow:0 3px 0 rgba(120,85,40,.25), inset 0 0 0 2.5px #E9C9A8; }
+/* turn banner */
+.bn { position:absolute; left:0; right:0; top:60px; height:384px; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:7; background:rgba(42,28,12,.28); animation:fadein .2s; }
+.bn-card { background:var(--pc); color:#fff; border-radius:24px; padding:12px 24px 12px 12px; display:flex; align-items:center; gap:14px; box-shadow:0 5px 0 var(--pcd), 0 14px 30px rgba(0,0,0,.25); animation:bn-in .35s ease-out; }
+.bn-card .av { border-color:#fff; }
+.bn-t { font:800 28px/1.2 var(--font-deva); white-space:nowrap; }
+
+/* people */
+.av { border-radius:50%; background:#FFF8EA; border:3px solid var(--pc); display:inline-flex; align-items:flex-end; justify-content:center; overflow:hidden; flex:none; box-sizing:border-box; }
+.av.big { border-width:4px; }
+
+/* end / stop cards */
+.cs-over { position:absolute; inset:0; background:rgba(40,28,12,.5); display:flex; align-items:center; justify-content:center; padding:16px; z-index:10; animation:fadein .2s; }
+.ce-card { width:100%; background:var(--paper); border-radius:20px; padding:18px 16px 16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 8px 24px rgba(40,28,12,.35); animation:pop .35s ease-out; font-family:var(--font-deva); color:#1C2B33; position:relative; }
+.ce-head { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.ce-two { display:flex; gap:10px; }
+.ce-title { font:800 30px/1.2 var(--font-deva); color:var(--mud-ink); text-align:center; }
+.ce-title.sm { font-size:26px; padding:6px 0 4px; }
+.ce-player { border-radius:14px; background:#F6EFE0; padding:8px 10px; display:flex; flex-direction:column; gap:7px; border-left:5px solid var(--pc); }
+.ce-who { display:flex; align-items:center; gap:8px; }
+.ce-who b { flex:1; font-size:19px; }
+.ce-n { font:800 26px var(--font-ui); color:var(--mud-ink); }
+.ce-items { display:flex; flex-wrap:wrap; gap:6px; }
+.ce-item { display:inline-flex; align-items:center; gap:6px; background:#fff; border-radius:12px; padding:3px 10px 3px 4px; box-shadow:0 2px 0 #D8C9AA; font:700 17px var(--font-deva); color:#1C2B33; }
+.ce-item svg:last-child { color:var(--teal-700); }
+.ce-none { color:#B39B76; font-weight:700; padding-left:4px; }
+.ce-btns { display:flex; gap:10px; margin-top:4px; }
+.ce-btn { height:54px; padding:0 18px; border-radius:16px; font:700 20px var(--font-deva); display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+.ce-btn.go { background:var(--teal-600); color:#fff; box-shadow:0 3px 0 var(--teal-700); }
+.ce-btn.soft { background:#EFE4CC; color:var(--mud-ink); box-shadow:0 3px 0 #C9AA72; }
+.conf { position:absolute; left:50%; top:40px; width:0; height:0; pointer-events:none; }
+.conf i { position:absolute; width:9px; height:14px; border-radius:2px; background:var(--c); animation:conf 1.4s ease-out calc(var(--i) * 40ms) both; }
+
+/* setup (for the grown-up) */
+.ks { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 30%, #F2E0BC 0%, #E6CC9C 65%, #D8B985 100%); display:flex; flex-direction:column; padding:16px; gap:12px; color:var(--mud-ink); font-family:var(--font-ui); }
+.ks-hero { height:190px; border-radius:18px; overflow:hidden; flex:none; box-shadow:0 3px 0 rgba(120,85,40,.3); border:3px solid #FFF8EA; }
+.ks-hero svg { display:block; }
+.ks-head { display:flex; align-items:center; gap:10px; }
+.ks-m { display:flex; flex:none; }
+.ks-title { font:800 30px/1.1 var(--font-deva); color:#5A3A12; }
+.ks-sub { font:600 15px/1.4 var(--font-deva); color:var(--mud-soft); margin-top:2px; }
+.ks-spk { width:48px; height:48px; border-radius:50%; background:var(--paper); color:var(--teal-700); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 0 #C9AA72; flex:none; }
+.kp { background:#FFF8EA; border-radius:18px; border:3px solid var(--pc); padding:8px 10px 10px; display:flex; flex-direction:column; gap:8px; box-shadow:0 3px 0 #C9AA72; }
+.kp-name { display:flex; align-items:center; gap:10px; }
+.kp-name input { flex:1; min-width:0; font:700 20px var(--font-deva); border:none; border-bottom:2px dashed #D9C49B; background:transparent; outline:none; color:var(--mud-ink); -webkit-user-select:text; user-select:text; padding:6px 2px; }
+.kp-name input::placeholder { color:#B39B76; font-weight:600; font-size:17px; }
+.kp-name input:focus { border-bottom-color:var(--pc); }
+.kp-lv { display:flex; gap:6px; }
+.kp-l { flex:1; min-width:0; height:54px; border-radius:14px; background:#F3E7CF; border:2px solid transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; color:var(--mud-ink); }
+.kp-l b { font:700 17px/1.2 var(--font-deva); }
+.kp-l small { font:600 12px/1.2 var(--font-deva); color:var(--mud-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; padding:0 4px; }
+.kp-l.on { background:var(--pc); border-color:var(--pcd); color:#fff; box-shadow:0 3px 0 var(--pcd); }
+.kp-l.on small { color:rgba(255,255,255,.85); }
+.ks-go { height:60px; border-radius:18px; background:var(--teal-600); color:#fff; font:700 24px var(--font-deva); box-shadow:0 4px 0 var(--teal-700); display:flex; align-items:center; justify-content:center; gap:10px; margin-top:auto; flex:none; }
+
+/* ===================== कंचे only ===================== */
+@keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+@keyframes bars { 0%,100% { transform:scaleY(.3); } 50% { transform:scaleY(1); } }
+@keyframes rs-in { from { transform:translateY(70%); } to { transform:none; } }
+@keyframes pull { 0% { transform:translate(0,0); opacity:0; } 15% { transform:translate(0,0); opacity:1; } 65% { transform:translate(0,72px); opacity:1; } 82% { transform:translate(0,72px); opacity:0; } 100% { transform:translate(0,72px); opacity:0; } }
+.kc .top { position:absolute; left:0; right:0; top:0; z-index:5; }
+/* in कंचे the count is a marble */
+.kc .tc-n, .kc .tc.on .tc-n { width:32px; height:32px; color:#16323C; font-size:17px; background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 20%), radial-gradient(circle at 50% 54%, #FCFBF5 0 55%, #E07B39 60% 82%, #B5562A 100%); box-shadow:0 2px 2px rgba(80,55,20,.3); }
+.tc-mb { display:none; }
+.kc .bn { height:470px; }
+.tc-n.bump { animation:bump .5s ease; }
+.kc-marble.sm { width:36px; height:36px; margin:-18px 0 0 -18px; }
+.kc-marble.sm::before { inset:2px; border-width:2.5px; }
+.kc-striker.sm { width:42px; height:42px; margin:-21px 0 0 -21px; }
+.kc-spot { position:absolute; z-index:3; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.kc-spot i { width:16px; height:16px; border-radius:50%; background:rgba(255,248,234,.7); border:2.5px dashed rgba(110,75,35,.55); }
+.aim-demo { position:absolute; z-index:4; pointer-events:none; margin:-7px 0 0 -17px; animation:pull 1.9s ease-in-out infinite; filter:drop-shadow(0 3px 3px rgba(0,0,0,.3)); }
+.kb { position:absolute; left:12px; right:12px; bottom:14px; z-index:4; transition:opacity .3s; }
+.kb.quiet { opacity:0; }
+
+/* after a shot: the reading sheet */
+.rs { position:absolute; left:0; right:0; bottom:0; z-index:5; background:linear-gradient(#EFDDB8, #E3CB9A); border-radius:24px 24px 0 0; box-shadow:0 -3px 0 rgba(120,85,40,.2), 0 -12px 26px rgba(60,40,10,.16); padding:12px 12px 14px; display:flex; flex-direction:column; gap:10px; }
+.rs.enter { animation:rs-in .32s ease-out; }
+.rs-tray { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.kr-m { width:48px; height:48px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font:700 23px var(--font-deva); color:#16323C; flex:none;
+  background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 20%), radial-gradient(circle at 50% 54%, #FCFBF5 0 55%, var(--sw) 60% 82%, var(--sw2) 100%);
+  box-shadow:0 3px 3px rgba(80,55,20,.3); transition:transform .15s; }
+.kr-m.on { box-shadow:0 0 0 4px var(--pc), 0 3px 3px rgba(80,55,20,.3); transform:translateY(-3px); }
+.kr-m.xs { width:32px; height:32px; font-size:16px; }
+.rs-read { display:flex; align-items:center; gap:12px; background:#FFFDF6; border-radius:18px; padding:10px 12px; min-height:100px; box-shadow:0 3px 0 rgba(120,85,40,.25); }
+.rs-read.nosel { justify-content:center; background:transparent; box-shadow:none; }
+.rs-item { flex:1; min-width:0; display:flex; align-items:center; gap:10px; }
+.rs-item.again { animation:shake .4s ease; }
+.rs-big { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; font:700 44px var(--font-deva); color:#16323C; flex:none;
+  background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 20%), radial-gradient(circle at 50% 54%, #FCFBF5 0 56%, var(--sw) 61% 82%, var(--sw2) 100%); box-shadow:0 4px 4px rgba(80,55,20,.3); }
+.rs-big.sm { width:48px; height:48px; font-size:24px; }
+.rs-text { flex:1; min-width:0; font:700 34px/1.2 var(--font-deva); color:#1C2B33; }
+.rs-text.vakya { font-size:23px; line-height:1.35; }
+.rs-mic { flex:none; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.rs-mic-c { width:70px; height:70px; border-radius:50%; background:var(--teal-600); box-shadow:0 4px 0 var(--teal-700); display:flex; align-items:center; justify-content:center; animation:pulse 1.6s ease-in-out infinite; }
+.rs-mic.on .rs-mic-c { background:var(--teal-700); box-shadow:none; animation:none; }
+.rs-mic .bars { display:flex; gap:4px; align-items:center; height:30px; }
+.rs-mic .bars i { width:5px; height:28px; background:#fff; border-radius:3px; animation:bars .7s ease-in-out infinite; }
+.rs-mic .bars i:nth-child(2) { animation-delay:.12s; } .rs-mic .bars i:nth-child(3) { animation-delay:.24s; } .rs-mic .bars i:nth-child(4) { animation-delay:.36s; }
+.rs-mic-t { font:700 16px var(--font-deva); color:var(--teal-700); }
+.rs-pick { animation:bob 1.2s ease-in-out infinite; display:flex; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+.rs-empty { flex:1; display:flex; align-items:center; justify-content:center; }
+.rs-ok { width:60px; height:60px; border-radius:50%; background:var(--green-600); color:#fff; display:flex; align-items:center; justify-content:center; animation:pop .35s ease-out; }
+.rs-foot { display:flex; justify-content:flex-end; }
+.rs-skip { height:42px; padding:0 12px 0 16px; border-radius:21px; background:#F7EEDA; color:var(--mud-ink); font:700 16px var(--font-deva); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 0 #C9AA72; }
+.kr-fly { position:absolute; z-index:9; border-radius:50%; display:flex; align-items:center; justify-content:center; font:700 40px var(--font-deva); color:#16323C; pointer-events:none;
+  background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 20%), radial-gradient(circle at 50% 54%, #FCFBF5 0 56%, var(--sw) 61% 82%, var(--sw2) 100%); box-shadow:0 6px 12px rgba(0,0,0,.3); }
+.bn-s { font:700 17px var(--font-deva); opacity:.9; margin-top:2px; }
+.ce-mb { display:inline-flex; align-items:center; gap:6px; background:#fff; border-radius:20px; padding:3px 12px 3px 3px; box-shadow:0 2px 0 #D8C9AA; font:700 16px var(--font-deva); color:#1C2B33; }
+.ce-mb.akshar { padding:3px; }
+.ce-items { gap:6px; }
+
+/* ===================== घूमता लट्टू ===================== */
+@keyframes pull2 { 0% { transform:translate(0,0); opacity:0; } 15% { transform:translate(0,0); opacity:1; } 65% { transform:translate(44px,70px); opacity:1; } 82% { transform:translate(44px,70px); opacity:0; } 100% { transform:translate(44px,70px); opacity:0; } }
+@keyframes ring-pulse { 0%,100% { opacity:.2; } 50% { opacity:.95; } }
+.lt { position:absolute; inset:0; overflow:hidden; background:radial-gradient(ellipse at 50% 45%, #F2E0BC 0%, #E8CF9F 55%, #D8B984 100%); font-family:var(--font-ui); color:var(--mud-ink); }
+.lt .top { position:absolute; left:0; right:0; top:0; z-index:6; }
+.lt .bn { height:536px; }
+.lt-shadow { position:absolute; width:80px; height:16px; border-radius:50%; background:rgba(80,40,10,.22); z-index:1; }
+.lt-top { position:absolute; z-index:2; transform-origin:50% 98%; pointer-events:none; }
+.lt-top svg { display:block; }
+.lt-top.spinning .lt-wound { display:none; }
+.lt-str { position:absolute; left:0; top:0; z-index:3; pointer-events:none; overflow:visible; }
+.str-glow { animation:ring-pulse 1.3s ease-in-out infinite; }
+.lt-tiles { position:absolute; inset:0; z-index:4; pointer-events:none; }
+.lt-tile { position:absolute; pointer-events:auto; touch-action:manipulation; background:var(--paper); color:#16323C; border:2px solid #E2D3B4; border-radius:14px; box-shadow:0 4px 0 #B8A88A; font:700 32px/1 var(--font-deva); display:flex; align-items:center; justify-content:center; white-space:nowrap; transition:opacity .15s; }
+.lt-tile.ak { width:58px; height:58px; padding-top:4px; }
+.lt-tile.wd { height:48px; padding:3px 14px 0; font-size:23px; }
+.lt-tile.no { animation:shake .4s ease; background:#E8EFF1; border-color:#C7D6DB; color:#7E949C; box-shadow:0 2px 0 #C7D6DB; }
+.lt-tiles.freeze .lt-tile { opacity:.45; pointer-events:none; }
+.mb-b.hid { justify-content:space-between; }
+.lt-q { width:44px; height:44px; border-radius:12px; border:3px dashed var(--teal-600); color:var(--teal-600); font:800 28px var(--font-ui); display:flex; align-items:center; justify-content:center; }
+.lt-slots { display:flex; gap:5px; flex-wrap:wrap; align-items:center; flex:1; min-width:0; }
+.lt-slots i { width:40px; height:34px; border-radius:9px; border:2.5px dashed #9DB7C1; }
+.lt-slots b { height:34px; padding:2px 9px 0; border-radius:9px; background:var(--pc); color:#fff; font:700 19px var(--font-deva); display:flex; align-items:center; animation:pop .25s ease-out; }
+.lt-slots.done b { background:var(--green-600); }
+.lt-reveal { font:700 32px/1.2 var(--font-deva); color:#16323C; animation:pop .3s ease-out; }
+.lt-reveal.vakya { font-size:21px; }
+.lt-count { font:700 16px var(--font-deva); color:var(--mud-soft); white-space:nowrap; margin-left:auto; padding:0 6px; }
+.rs-read { justify-content:center; }
+.ey { display:flex; align-items:center; justify-content:center; padding:6px 0; }
+.ey .av { border-width:4px; }
+.cl { display:flex; align-items:center; gap:10px; width:100%; }
+.cl-who { position:relative; flex:none; display:flex; flex-direction:column; align-items:center; }
+.cl-eyes { position:absolute; right:-10px; bottom:-12px; }
+.cl-eyes .av { border-width:2px; background:#fff; }
+.cl-chit { flex:1; min-width:0; text-align:center; font:700 46px/1.2 var(--font-deva); color:#16323C; padding:6px 4px; border-radius:12px; background:repeating-linear-gradient(180deg, transparent 0 27px, #DDE9F0 27px 28px); }
+.cl-chit.akshar { font-size:64px; }
+.cl-chit.vakya { font-size:25px; line-height:1.4; }
+.cl-chit.again { animation:shake .4s ease; }
+.ey-m { display:flex; flex:none; }
+.pull-demo { position:absolute; z-index:7; margin:-7px 0 0 -17px; pointer-events:none; animation:pull2 1.9s ease-in-out infinite; filter:drop-shadow(0 3px 3px rgba(0,0,0,.3)); }
+.ks-heroin { position:relative; width:100%; height:100%; overflow:hidden; background:radial-gradient(ellipse at 50% 50%, #F2E0BC 0%, #E6CC9C 80%); }
+.hero-ring { position:absolute; left:50%; top:50%; width:176px; height:176px; margin:-88px 0 0 -88px; border-radius:50%; border:3px solid rgba(142,106,60,.55); }
+.hero-shadow { position:absolute; left:50%; top:148px; width:56px; height:10px; margin-left:-28px; border-radius:50%; background:rgba(80,40,10,.2); }
+.hero-top { position:absolute; left:50%; top:22px; margin-left:-44px; transform:rotate(-6deg); transform-origin:50% 98%; z-index:1; }
+.hero-tile { position:absolute; width:40px; height:40px; background:var(--paper); border:2px solid #E2D3B4; border-radius:11px; box-shadow:0 3px 0 #B8A88A; display:flex; align-items:center; justify-content:center; font:700 22px var(--font-deva); color:#16323C; transform:rotate(var(--r)); padding-top:3px; }
+.hero-tile.wd { width:auto; padding:3px 10px 0; height:36px; font-size:18px; }
+.ce-mb .ce-t { font:700 18px var(--font-deva); }
+.ce-mb .ce-x { min-width:24px; height:24px; border-radius:12px; background:var(--pc); color:#fff; font:800 14px var(--font-ui); display:flex; align-items:center; justify-content:center; padding:0 6px; }
+.ce-mb { padding:4px 4px 4px 12px; }
+
+/* ---------- simplest version: pile, catch boxes, choose by voice ---------- */
+.pile { position:absolute; z-index:5; left:12px; top:72px; width:40px; height:48px; pointer-events:none; }
+.pile i, .pile b { position:absolute; width:36px; height:42px; border-radius:8px; background:var(--paper); border:2px solid #D9C49B; box-shadow:0 2px 0 #B8A88A; }
+.pile i:nth-child(1) { left:5px; top:-5px; transform:rotate(6deg); }
+.pile i:nth-child(2) { left:2px; top:-2px; transform:rotate(-4deg); }
+.pile b { left:0; top:0; display:flex; align-items:center; justify-content:center; font:800 18px var(--font-ui); color:var(--mud-ink); }
+.lt-target { width:46px; height:46px; border-radius:12px; background:var(--pc); color:#fff; font:700 30px/1 var(--font-deva); display:flex; align-items:center; justify-content:center; padding-top:3px; flex:none; }
+.lt-prog { display:flex; gap:4px; flex:1; min-width:0; padding-left:8px; }
+.lt-prog i { width:var(--bw, 26px); height:30px; border-radius:7px; border:2.5px dashed #9DB7C1; font:700 16px/1 var(--font-deva); font-style:normal; color:#fff; display:flex; align-items:center; justify-content:center; padding-top:2px; }
+.lt-prog i.on { border:2.5px solid var(--pc); background:var(--pc); animation:pop .25s ease-out; }
+.lt-tile.missed { box-shadow:0 0 0 4px var(--pc), 0 4px 0 #B8A88A; }
+.lt-tiles .lt-tile { transition:opacity .2s; }
+.lt-tiles.over .lt-tile:not(.missed):not(.no) { opacity:.4; }
+.mb.wide .mb-m { display:none; }
+.mb.wide .mb-b::before { display:none; }
+.ch { display:flex; align-items:center; gap:12px; width:100%; justify-content:center; }
+.ch-cards { display:flex; gap:10px; flex:1; justify-content:center; }
+.ch-card { width:64px; height:76px; border-radius:14px; background:var(--paper); border:2px solid #E2D3B4; box-shadow:0 4px 0 #B8A88A; font:700 40px/1 var(--font-deva); color:#16323C; display:flex; align-items:center; justify-content:center; padding-top:4px; cursor:default; animation:pop .3s ease-out both; }
+.ch-card:nth-child(2) { animation-delay:.08s; } .ch-card:nth-child(3) { animation-delay:.16s; }
+.ch-card.tap { cursor:pointer; border-color:var(--pc); box-shadow:0 4px 0 var(--pcd); }
+.lt-fly { position:absolute; z-index:9; border-radius:12px; background:var(--pc); color:#fff; font:700 30px/1 var(--font-deva); display:flex; align-items:center; justify-content:center; pointer-events:none; overflow:hidden; }
+.ce-card-l { width:38px; height:44px; border-radius:10px; background:#fff; border:2px solid var(--pc); box-shadow:0 2px 0 #D8C9AA; font:700 22px/1 var(--font-deva); color:#16323C; display:inline-flex; align-items:center; justify-content:center; padding-top:3px; }
+
+/* ---------- letter level: rungs, stream, fix-it ---------- */
+.bn-dots { display:flex; gap:7px; margin-top:7px; }
+.bn-dots i { width:15px; height:15px; border-radius:50%; border:2.5px solid rgba(255,255,255,.7); }
+.bn-dots i.w { background:#fff; border-color:#fff; }
+.bn-dots i.l { background:rgba(255,255,255,.22); border-color:rgba(255,255,255,.4); }
+.bn-dots i.now { border-color:#fff; box-shadow:0 0 0 3px rgba(255,255,255,.35); animation:kc-pulse 1s ease-in-out infinite; }
+.cl-chit.sy { font-size:58px; }
+.cl-chit.q { flex:1; min-height:92px; display:flex; align-items:center; justify-content:center; border:3px dashed var(--pc); color:var(--pc); background:none; font:800 52px/1 var(--font-ui); }
+.cl-chit.flash { animation:pop .2s ease-out; box-shadow:inset 0 0 0 3px var(--pc); }
+.cl-spk { width:58px; height:58px; border-radius:50%; background:var(--teal-100); color:var(--teal-700); display:flex; align-items:center; justify-content:center; flex:none; box-shadow:0 3px 0 #B9D7E0; }
+.cl > .av { border-width:3px; }
+.rs-wait { width:70px; height:70px; display:flex; align-items:center; justify-content:center; color:var(--ink-muted); flex:none; }
+.rs-mic[disabled] { cursor:default; }
+.lt-target.q { background:none; border:3px dashed var(--pc); color:var(--pc); font:800 28px/1 var(--font-ui); padding-top:0; }
+.lt-target.sy { font-size:24px; }
+.mb-b .lt-target + .mb-t { padding-left:4px; }
+.mb-b > .lt-target:first-child:not(.q) { margin-left:-8px; }
+.lt-tile.sy { font-size:27px; }
+.lt-prog.sy i { font-size:12px; }
+.lt-fly.sy { font-size:24px; }
+.fx { display:flex; gap:22px; justify-content:center; width:100%; padding:4px 0; }
+.fx-card { width:98px; height:104px; border-radius:18px; background:var(--paper); border:3px solid var(--pc); box-shadow:0 5px 0 var(--pcd); font:700 56px/1 var(--font-deva); color:#16323C; display:flex; align-items:center; justify-content:center; padding-top:6px; position:relative; animation:pop .3s ease-out both; }
+.fx-card.was { animation:pop .3s ease-out both, shake .45s ease .35s; }
+.fx-card.dim { border-color:#C7D6DB; box-shadow:0 4px 0 #B5C5CB; background:#EDF2F4; color:#6E858D; }
+.fx-card.right { border-color:var(--green-600); box-shadow:0 5px 0 var(--green-700), 0 0 0 6px rgba(30,158,74,.22); animation:kc-pulse 1s ease-in-out infinite; }
+.fx-card.sy { font-size:46px; }
+.fx-ok { position:absolute; right:-9px; top:-9px; width:30px; height:30px; border-radius:50%; background:var(--green-600); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 0 var(--green-700); }
+.kp-info { font:700 15px/1.2 var(--font-deva); color:var(--mud-soft); padding-left:50px; }
+.kp-info:empty { display:none; }
+.kp-info b { color:var(--pcd); font:800 18px var(--font-ui); }
+.kp-pill { display:inline-block; background:#F1E6CF; border-radius:10px; padding:3px 10px 1px; font-size:14px; }
+.ce-line { font:700 16px/1.35 var(--font-deva); color:var(--green-700); background:var(--green-100); border-radius:10px; padding:5px 10px 3px; }
+.ce-line.set { display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:var(--teal-700); background:var(--teal-100); }
+.ce-line.set span { display:flex; gap:4px; flex-wrap:wrap; }
+.ce-line.set b { min-width:26px; height:28px; border-radius:7px; background:#fff; border:1.5px solid var(--teal-200); display:inline-flex; align-items:center; justify-content:center; font:700 17px var(--font-deva); padding:2px 3px 0; }
+.ce-card-l.sy { width:auto; padding:3px 6px 0; font-size:19px; }
+.st-rmeta .lt-sure { color:#7FD49A; } .st-rmeta .lt-learning { color:#F0A07A; } .st-rmeta .lt-new { color:#7E949C; }
+.st-rmeta .m { opacity:.5; }
+.st-rmeta .g { color:#7FD49A; } .st-rmeta .w { color:#F0A07A; }
+.st-rung .deva, .st-rmeta .deva, .st-note .deva { font-family:var(--font-deva); }
+
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="st-head">
+    <div class="st-title">घूमता लट्टू · Spinning Top <span>· letter level · two children, strict turns, each at her own rung (R1–R5)</span></div>
+    <div class="st-meta">the mic step for her rung · pull the string · letters pop out one at a time and fade · catch 4–6 of hers before the top stops, touch nothing else · 5 turns each, more cards wins · progress saved per child on this phone · 360×720dp · offline · prototype voice = the browser's Hindi voice, mic is simulated · on a phone the game fills the screen</div>
+  </div>
+  <div class="st-body">
+    <div class="bezel">
+      <div class="status"><div>9:41</div><div>▮▮▮ &nbsp;▭</div></div>
+      <div class="screen" id="screen"></div>
+      <div class="home-bar"><i></i></div>
+    </div>
+    <div class="st-side" id="side"></div>
+  </div>
+</div>
+<script>
+/* घूमता लट्टू — letter level. Everything the rungs, sets and pairs need.
+   Sets, look-alike pairs (2.7), sound-alike pairs (2.3) and the Set F rule come from the
+   Hindi Language Foundations Continuum, as mapped for Sound Hunt (October 2026). Set 0 is ours. */
+(function (root) {
+const PLAYERS = {
+  p1: { color: '#12809B', dark: '#0B6076', fallback: 'खिलाड़ी 1' },
+  p2: { color: '#6B4FA0', dark: '#4E3778', fallback: 'खिलाड़ी 2' },
+};
+// letter sets, in the order they open
+const SETS = {
+  '0': ['अ', 'आ'],
+  A: ['म', 'न', 'क', 'ल', 'र', 'त'],
+  B: ['द', 'प', 'ब', 'स', 'ग', 'ह'],
+  C: ['य', 'ज', 'च', 'ट', 'ड', 'ख'],
+  D: ['व', 'श', 'थ', 'ध', 'फ', 'भ', 'ड़'],
+  E: ['घ', 'छ', 'झ', 'ठ', 'ढ', 'ढ़'],
+  F: ['ण', 'ष'],          // never a letter to catch or say; only among the other letters at R4
+};
+const SET_ORDER = ['0', 'A', 'B', 'C', 'D', 'E'];
+const START_SETS = ['0', 'A', 'B'];
+// the continuum's pairs: each can show up only once both its letters are open
+const PAIRS = [
+  ['द', 'ड', 'look'], ['ब', 'व', 'look'], ['म', 'भ', 'look'], ['घ', 'ध', 'look'], ['ह', 'ठ', 'look'], ['ड', 'ढ', 'look'],
+  ['क', 'ख', 'sound'], ['प', 'फ', 'sound'], ['ब', 'भ', 'sound'], ['त', 'थ', 'sound'], ['द', 'ध', 'sound'], ['ट', 'ठ', 'sound'], ['ड', 'ढ', 'sound'],
+];
+// ours: more letters that look alike. Used to keep R1's other letters clearly different,
+// and to fill the look-alike share at R3–R5 (same rule: both letters must be open; Set F only at R4)
+const LOOKS = [['ड', 'ड़'], ['ढ', 'ढ़'], ['प', 'ष'], ['प', 'य'], ['य', 'थ'], ['म', 'स'], ['न', 'त'], ['ट', 'ठ'], ['ह', 'द'], ['अ', 'आ']];
+// home-language sounds: saying one for the other is not a mistake
+const HOME = { 'व': 'ब', 'श': 'स', 'ण': 'न', 'ष': 'श' };
+const HOME_PAIRS = [['व', 'ब'], ['श', 'स'], ['ण', 'न'], ['ष', 'श']];
+// R5: Sets A and B consonants with matras
+const MATRAS = ['ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ'];
+const R5_CONS = SETS.A.concat(SETS.B);
+// the five rungs. Times in ms. alike = share of the other letters that are look- or sound-alikes
+const RUNGS = {
+  1: { key: 'R1', hi: 'देखो और पकड़ो', en: 'Watch and catch', need: 4, targets: 7, decoys: 7, every: 1200, stays: 4500, max: 3, alike: 0 },
+  2: { key: 'R2', hi: 'पढ़ो और पकड़ो', en: 'Read and catch', need: 5, targets: 7, decoys: 8, every: 1000, stays: 3800, max: 4, alike: 0.125 },
+  3: { key: 'R3', hi: 'सुनो और पकड़ो', en: 'Hear and catch', need: 5, targets: 7, decoys: 9, every: 900, stays: 3300, max: 5, alike: 0.34 },
+  4: { key: 'R4', hi: 'झट से पहचानो', en: 'Quick and sure', need: 6, targets: 7, decoys: 11, every: 750, stays: 2600, max: 6, alike: 0.66 },
+  5: { key: 'R5', hi: 'मात्रा पकड़ो', en: 'Catch the matra', need: 5, targets: 7, decoys: 9, every: 900, stays: 3300, max: 5, alike: 0.75 },
+};
+const TURNS = 5;        // turns each per game, strictly one each
+const TRIES = 2;        // mic tries, then Mitthu says it
+const PASS = 4;         // wins out of 5 to pass a round
+const SURE_MS = 1500;   // a sure letter is caught in under ~1.5 s
+const OPEN_AT = 0.8;    // next set opens when she is sure of 80% of her open letters
+root.KDATA = { PLAYERS, SETS, SET_ORDER, START_SETS, PAIRS, LOOKS, HOME, HOME_PAIRS, MATRAS, R5_CONS, RUNGS, TURNS, TRIES, PASS, SURE_MS, OPEN_AT };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* कंचे — art. Everything is drawn as SVG strings so the file stays offline and small.
+   The scene is seen from above: a mud courtyard (आँगन), a ring scratched with a stick,
+   a jute mat (टाट-पट्टी) where each child sits, a few pebbles, neem leaves and chappals. */
+(function (root) {
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const svg = (vb, w, h, body, extra) => `<svg viewBox="${vb}" width="${w}" height="${h}" aria-hidden="true" ${extra || ''}>${body}</svg>`;
+
+// ---- ground: specks, pebbles, leaves, a twig (360 x 720) ----
+function ground(two) {
+  const r = rng(7);
+  let s = '';
+  for (let i = 0; i < 260; i++) {
+    const x = r() * 360, y = r() * 720, rr = 0.6 + r() * 1.8;
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(1)}" fill="${r() < .5 ? '#C9A873' : '#F6E7C6'}" opacity="${(0.35 + r() * 0.4).toFixed(2)}"/>`;
+  }
+  // tyre / foot marks: faint arcs
+  for (let i = 0; i < 9; i++) {
+    const x = 20 + r() * 320, y = 170 + r() * 380;
+    s += `<path d="M${x.toFixed(0)} ${y.toFixed(0)}q14 -6 28 0" stroke="#C7A570" stroke-width="2" fill="none" opacity=".35" stroke-linecap="round"/>`;
+  }
+  const pebble = (x, y, w, h, rot, c) => `<g transform="translate(${x} ${y}) rotate(${rot})"><ellipse cx="0" cy="2" rx="${w}" ry="${h}" fill="#8C6B3E" opacity=".25"/><ellipse cx="0" cy="0" rx="${w}" ry="${h}" fill="${c}"/><ellipse cx="${-w * .3}" cy="${-h * .35}" rx="${w * .35}" ry="${h * .25}" fill="#fff" opacity=".35"/></g>`;
+  s += pebble(334, 214, 7, 5, 20, '#A69A8B') + pebble(343, 236, 4, 3, -10, '#B8AE9F') + pebble(28, 470, 5, 4, 40, '#9E9384')
+    + pebble(330, 492, 6, 4, -30, '#ADA192') + pebble(46, 205, 3.5, 2.6, 0, '#B5AA9B') + pebble(316, 540, 3, 2.4, 0, '#A69A8B');
+  const leaf = (x, y, rot, c) => `<g transform="translate(${x} ${y}) rotate(${rot})"><path d="M0 0c6-7 18-8 26 0c-8 8-20 7-26 0z" fill="${c}"/><path d="M0 0h25" stroke="#4E7A2E" stroke-width="1" opacity=".7"/></g>`;
+  s += leaf(322, 300, -35, '#7FA650') + leaf(330, 318, 20, '#93B862') + leaf(18, 330, 60, '#86AD57') + leaf(300, 548, 160, '#9BBE6B');
+  s += `<path d="M30 520l26 -10 M44 515l6 -9" stroke="#8A6438" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>`;
+  // chappals: one pair near each mat
+  const chappal = (x, y, rot, c) => `<g transform="translate(${x} ${y}) rotate(${rot})"><g><path d="M0 0c-6 0-9 6-9 14s2 16 9 16 9-8 9-16-3-14-9-14z" fill="#5B4636"/><path d="M-6 6q6 6 12 0" stroke="${c}" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M0 2v6" stroke="${c}" stroke-width="2.4"/></g><g transform="translate(20 3) rotate(8)"><path d="M0 0c-6 0-9 6-9 14s2 16 9 16 9-8 9-16-3-14-9-14z" fill="#5B4636"/><path d="M-6 6q6 6 12 0" stroke="${c}" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M0 2v6" stroke="${c}" stroke-width="2.4"/></g></g>`;
+  s += chappal(306, 520, 200, '#12809B');
+  if (two) s += chappal(54, 200, 20, '#6B4FA0');
+  return svg('0 0 360 720', 360, 720, s, 'class="kc-ground-svg"');
+}
+
+// the tree's shadow (neem), in the top-left corner; it grows as the sun goes down
+function treeShadow() {
+  const r = rng(11);
+  let s = '';
+  for (let i = 0; i < 30; i++) {
+    const a = r() * Math.PI * 2, d = r() * 46;
+    s += `<circle cx="${(90 + Math.cos(a) * d).toFixed(0)}" cy="${(80 + Math.sin(a) * d * .85).toFixed(0)}" r="${(14 + r() * 16).toFixed(0)}"/>`;
+  }
+  return svg('0 0 180 160', 180, 160, `<defs><filter id="tsb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.2"/></filter></defs><g fill="#4A3414" filter="url(#tsb)">${s}</g>`);
+}
+
+// ring scratched with a stick: a slightly wobbly double line
+function ring(cx, cy, R) {
+  const r = rng(3);
+  const pts = (rad, n) => { let d = ''; for (let i = 0; i <= n; i++) { const a = i / n * Math.PI * 2, j = rad + (r() - .5) * 3.2; d += `${i ? 'L' : 'M'}${(cx + Math.cos(a) * j).toFixed(1)} ${(cy + Math.sin(a) * j).toFixed(1)}`; } return d + 'Z'; };
+  return svg('0 0 360 720', 360, 720,
+    `<circle cx="${cx}" cy="${cy}" r="${R - 2}" fill="#D9BB8A" opacity=".45"/>`
+    + `<path d="${pts(R, 90)}" stroke="#8E6A3C" stroke-width="3.4" fill="none" stroke-linejoin="round" opacity=".9"/>`
+    + `<path d="${pts(R + 3, 70)}" stroke="#F3E2BF" stroke-width="1.4" fill="none" opacity=".8"/>`,
+    'class="kc-ring-svg"');
+}
+// the line (लकीर) a child shoots from
+function line(x, y) {
+  return `<path d="M${x - 34} ${y + 1}q17 -3 34 0t34 0" stroke="#8E6A3C" stroke-width="3" fill="none" stroke-linecap="round" opacity=".75"/>`;
+}
+
+// ---- Mitthu, the pale elephant from the PadhAI design system ----
+const MITTHU_BODY = `<ellipse cx="13" cy="28" rx="12" ry="14" fill="#A9BCC4"/><ellipse cx="14" cy="28" rx="7.5" ry="9.5" fill="#F4C7CF"/><ellipse cx="51" cy="28" rx="12" ry="14" fill="#A9BCC4"/><ellipse cx="50" cy="28" rx="7.5" ry="9.5" fill="#F4C7CF"/><circle cx="32" cy="30" r="19" fill="#BFD0D6"/><path d="M27 38c0 8 1 14 5 17 3 2 7 0 6-3-2-1-4-3-4-6v-8z" fill="#BFD0D6"/><ellipse cx="20" cy="36" rx="3.2" ry="2" fill="#F4C7CF"/><ellipse cx="44" cy="36" rx="3.2" ry="2" fill="#F4C7CF"/>`;
+const MITTHU_EYES = {
+  idle: `<circle cx="25" cy="28" r="3.2" fill="#16323C"/><circle cx="39" cy="28" r="3.2" fill="#16323C"/><circle cx="26.2" cy="26.8" r="1.1" fill="#fff"/><circle cx="40.2" cy="26.8" r="1.1" fill="#fff"/>`,
+  glad: `<path d="M21.5 28.5q3.5-4 7 0M35.5 28.5q3.5-4 7 0" stroke="#16323C" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+  curious: `<circle cx="25" cy="27" r="3.4" fill="#16323C"/><circle cx="39" cy="27" r="3.4" fill="#16323C"/><circle cx="26.4" cy="25.6" r="1.2" fill="#fff"/><circle cx="40.4" cy="25.6" r="1.2" fill="#fff"/><path d="M34 19l8-2" stroke="#8FA7AF" stroke-width="2" stroke-linecap="round"/>`,
+};
+const mitthu = (size, mood) => svg('0 0 64 60', size, Math.round(size * 60 / 64), MITTHU_BODY + (MITTHU_EYES[mood] || MITTHU_EYES.idle));
+
+// ---- children (front view, for the mode cards and mats) ----
+function kid(who, size) {
+  const skin = who === 'p1' ? '#C98E62' : '#B97F55';
+  const hair = '#2B2622';
+  const face = `<circle cx="32" cy="30" r="17" fill="${skin}"/><circle cx="26" cy="31" r="2" fill="#16323C"/><circle cx="38" cy="31" r="2" fill="#16323C"/><path d="M26 38q6 5 12 0" stroke="#5A2E1E" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="21" cy="36" r="2.6" fill="#E59A86" opacity=".6"/><circle cx="43" cy="36" r="2.6" fill="#E59A86" opacity=".6"/>`;
+  const top = who === 'p1'
+    ? `<path d="M15 30c0-12 7-19 17-19s17 7 17 19c-3-6-9-10-17-10s-14 4-17 10z" fill="${hair}"/><path d="M15 28c-4 6-4 16 0 22" stroke="${hair}" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M49 28c4 6 4 16 0 22" stroke="${hair}" stroke-width="5" stroke-linecap="round" fill="none"/><circle cx="15" cy="51" r="3" fill="#E07B39"/><circle cx="49" cy="51" r="3" fill="#E07B39"/>`
+    : `<path d="M15 29c0-12 7-18 17-18s17 6 17 18c-4-5-6-8-9-8-3 2-10 3-15 1-4 1-7 4-10 7z" fill="${hair}"/>`;
+  const shirt = `<path d="M14 62c2-9 9-13 18-13s16 4 18 13z" fill="${who === 'p1' ? '#12809B' : '#6B4FA0'}"/>`;
+  return svg('0 0 64 62', size, Math.round(size * 62 / 64), shirt + face + top);
+}
+
+// ---- small things ----
+const IC = {
+  pouch: (s = 30) => svg('0 0 40 40', s, s, `<path d="M12 12c-6 6-8 12-8 16 0 6 6 9 16 9s16-3 16-9c0-4-2-10-8-16z" fill="#B98A4E"/><path d="M12 12h16" stroke="#7A5A2E" stroke-width="3" stroke-linecap="round"/><path d="M14 9c2 3 10 3 12 0" stroke="#E07B39" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M9 24c6 3 16 3 22 0" stroke="#A47740" stroke-width="1.6" fill="none"/><circle cx="16" cy="29" r="3" fill="#2F7FC1" opacity=".85"/><circle cx="24" cy="30" r="3" fill="#2E9E5B" opacity=".85"/>`),
+  chit: (s = 40) => svg('0 0 48 40', s, Math.round(s * 40 / 48), `<path d="M6 10l30-4 6 24-30 4z" fill="#FFFDF6" stroke="#D8CFB8" stroke-width="1.4"/><path d="M10 15l26-3M11 20l26-3M12 25l18-2.4" stroke="#B9D3E8" stroke-width="1.4"/><path d="M36 6l6 24" stroke="#E9E1CC" stroke-width="3"/>`),
+  sun: (s = 26) => svg('0 0 32 32', s, s, `<g stroke="#F08A24" stroke-width="2.4" stroke-linecap="round"><path d="M16 2v4M16 26v4M2 16h4M26 16h4M6 6l3 3M23 23l3 3M6 26l3-3M23 9l3-3"/></g><circle cx="16" cy="16" r="7.5" fill="#F7A23A" stroke="#F08A24" stroke-width="1.6"/>`),
+  moon: (s = 24) => svg('0 0 32 32', s, s, `<path d="M20 4a12 12 0 1 0 8 19A10 10 0 1 1 20 4z" fill="#F7E08A"/>`),
+  mic: (s = 26) => svg('0 0 24 24', s, s, `<rect x="9" y="2.5" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>`),
+  spk: (s = 22) => svg('0 0 24 24', s, s, `<path d="M4 9h3l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>`),
+  back: (s = 22) => svg('0 0 24 24', s, s, `<path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`),
+  check: (s = 16) => svg('0 0 24 24', s, s, `<path d="M5 13l4.5 4.5L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`),
+  lock: (s = 18) => svg('0 0 24 24', s, s, `<path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#7E949C" stroke-width="2.4" fill="none"/><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="#9DB0B7"/>`),
+  book: (s = 20) => svg('0 0 24 24', s, s, `<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z" fill="#FFFDF6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 6v14" stroke="currentColor" stroke-width="1.6"/>`),
+  hand: (s = 40) => svg('0 0 40 40', s, s, `<path d="M15 6c2 0 3 1.5 3 3.5V19l1-1c1.5-1.4 3.6-1.2 4.6.4l.6 1 1-.6c1.6-.9 3.6-.2 4.3 1.5l.4 1 .8-.3c1.7-.5 3.4.7 3.4 2.5V31c0 4-3 7-7 7h-6c-2.5 0-4.6-1.3-5.9-3.4L9.4 26c-1-1.6-.4-3.7 1.3-4.5l1.3-.6V9.5C12 7.5 13 6 15 6z" fill="#F3D2B5" stroke="#8C5B3B" stroke-width="1.6" stroke-linejoin="round"/>`),
+};
+
+root.KART = { ground, treeShadow, ring, line, mitthu, kid, IC };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+// ---- picture icons, so children don't have to read instructions ----
+(function (root) {
+  const s = (vb, w, body) => `<svg viewBox="${vb}" width="${w}" height="${w}" aria-hidden="true">${body}</svg>`;
+  root.KART.ICX = {
+    arrowR: (w = 30) => s('0 0 24 24', w, '<path d="M4 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'),
+    replay: (w = 24) => s('0 0 24 24', w, '<path d="M4 12a8 8 0 1 0 3-6.2" stroke="currentColor" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M3 3v6h6" stroke="currentColor" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'),
+    home: (w = 24) => s('0 0 24 24', w, '<path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v10h12V10" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linejoin="round"/><rect x="10" y="14" width="4" height="6" fill="currentColor"/>'),
+    cross: (w = 22) => s('0 0 24 24', w, '<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>'),
+    check: (w = 22) => s('0 0 24 24', w, '<path d="M5 13l4.5 4.5L19 7" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'),
+    play: (w = 26) => s('0 0 24 24', w, '<path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/>'),
+    pencil: (w = 20) => s('0 0 24 24', w, '<path d="M4 20l1-4L16 5l3 3L8 19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 7l3 3" stroke="currentColor" stroke-width="2"/>'),
+    ear: (w = 26) => s('0 0 24 24', w, '<path d="M7 9a5 5 0 0 1 10 0c0 3-3 4-3 7a3 3 0 0 1-6 .5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M10 9.5a2 2 0 0 1 4 0c0 1.4-1.4 1.8-1.4 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>'),
+    wait: (w = 24) => s('0 0 24 24', w, '<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/>'),
+    medal: (w = 40) => s('0 0 40 40', w, '<path d="M12 2l5 14M28 2l-5 14" stroke="#12809B" stroke-width="5" stroke-linecap="round"/><circle cx="20" cy="26" r="11" fill="#1E9E4A" stroke="#136B33" stroke-width="2.5"/><path d="M15 26l3.5 3.5L25 22" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'),
+    marble: (w = 22, c = '#2F7FC1') => s('0 0 24 24', w, `<circle cx="12" cy="12" r="10" fill="${c}"/><circle cx="12" cy="12.6" r="6" fill="#FCFBF5"/><circle cx="8.5" cy="7.5" r="2" fill="#fff" opacity=".9"/>`),
+    sound: (w = 26) => s('0 0 24 24', w, '<path d="M15 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/>'),
+    back: (w = 26) => s('0 0 24 24', w, '<path d="M9 7L4 12l5 5" stroke="currentColor" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12h9a6 6 0 0 1 6 6" stroke="currentColor" stroke-width="2.8" fill="none" stroke-linecap="round"/>'),
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+// ---- the top (लट्टू): wood, painted rings, an iron nail; streaks move when it spins ----
+(function (root) {
+  const A = root.KART;
+  A.lattu = (w, id) => `<svg viewBox="0 0 160 210" width="${w}" height="${Math.round(w * 210 / 160)}" aria-hidden="true" style="overflow:visible">
+    <defs><clipPath id="lb${id}"><path d="M20 76C20 48 50 42 80 42s60 6 60 34c0 38-36 84-60 106C56 160 20 114 20 76z"/></clipPath>
+      <linearGradient id="ls${id}" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".32"/><stop offset=".32" stop-color="#000" stop-opacity="0"/><stop offset=".62" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#000" stop-opacity=".34"/></linearGradient>
+      <pattern id="lp${id}" width="34" height="10" patternUnits="userSpaceOnUse"><rect width="9" height="10" fill="#fff" opacity=".28"/></pattern></defs>
+    <rect x="72" y="8" width="16" height="38" rx="7" fill="#7A4A21"/><circle cx="80" cy="10" r="10" fill="#9A5F2B"/>
+    <g clip-path="url(#lb${id})">
+      <rect x="0" y="30" width="160" height="170" fill="#C27C43"/>
+      <rect x="0" y="66" width="160" height="13" fill="#12809B"/><rect x="0" y="96" width="160" height="10" fill="#C2410C"/><rect x="0" y="122" width="160" height="8" fill="#2E9E5B"/><rect x="0" y="142" width="160" height="6" fill="#6B4FA0"/>
+      <g class="lt-streak"><rect x="-40" y="30" width="240" height="170" fill="url(#lp${id})"/></g>
+      <rect x="0" y="30" width="160" height="170" fill="url(#ls${id})"/>
+    </g>
+    <path d="M20 76C20 48 50 42 80 42s60 6 60 34c0 38-36 84-60 106C56 160 20 114 20 76z" fill="none" stroke="#6E3D18" stroke-width="5"/>
+    <ellipse cx="80" cy="46" rx="40" ry="7" fill="#fff" opacity=".3"/>
+    <g class="lt-wound" stroke="#F3E2BF" stroke-width="4" stroke-linecap="round" fill="none"><path d="M34 92q46 16 92 -4"/><path d="M38 108q42 15 84 -4"/><path d="M46 124q34 12 68 -3"/></g>
+    <path d="M72 180L80 206L88 180z" fill="#5E686D"/></svg>`;
+  // a child with her hands over her eyes
+  A.kidEyes = (who, size) => A.kid(who, size).replace('</svg>', `<g fill="${who === 'p1' ? '#B97A50' : '#A86E46'}" stroke="#7A4A2B" stroke-width="1"><rect x="18" y="25" width="13" height="12" rx="5"/><rect x="33" y="25" width="13" height="12" rx="5"/></g><g stroke="#7A4A2B" stroke-width="1" opacity=".7"><path d="M21 26v10M24.5 25.5v11M28 26v10M36 26v10M39.5 25.5v11M43 26v10"/></g></svg>`);
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* घूमता लट्टू — letter level. Two children, strict turns (5 each), each at her own rung.
+   A turn: "पूजा की बारी" → the mic step for her rung → pull the string → the top throws letters out
+   one at a time; each lands, stays a few seconds and fades → catch N of hers before the top stops,
+   touching nothing else. Catch N: the card is hers. Touch another letter: she fixes it (taps the right one
+   next to the wrong one), then the turn passes. The top stops first: the turn passes.
+   R1 देखो और पकड़ो · R2 पढ़ो और पकड़ो · R3 सुनो और पकड़ो · R4 झट से पहचानो · R5 मात्रा पकड़ो.
+   Each child's rung, letter sets, letter record and speed are saved on the phone (a guest's are not).
+   The mic never decides a turn, a game or a rung. */
+(function () {
+'use strict';
+const D = window.KDATA, A = window.KART;
+const $ = id => document.getElementById(id);
+const FAST = /[?&]fast=1/.test(location.search);
+const SHOTS = /[?&]shots=1/.test(location.search);
+const T = ms => (FAST ? 12 : ms);
+const K = FAST ? 0.04 : 1;                 // the top's clock runs 25x faster in tests
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- the courtyard (screen is 360 x 720) ---------- */
+const W = 360, TOPBAR = 60;
+const LAT = { x: 180, y: 300, w: 116 };
+const LAT_TOP = LAT.y - 92, ORIGIN = { x: 180, y: 250 };
+const HANDLE0 = { x: 252, y: 396 }, PULL = 64, FLIGHT = 420;
+
+/* ===================== voice: recorded clips first, the browser's Hindi voice otherwise ===================== */
+const CLIPS = window.BKAUDIO || {};
+const SPOKEN = window.KC_SPOKEN = [];
+let voice = null, audioToken = 0, busy = false;
+function pickVoice() { try { const vs = window.speechSynthesis.getVoices(); voice = vs.find(v => /^hi/i.test(v.lang)) || null; } catch (e) {} }
+if ('speechSynthesis' in window) { pickVoice(); try { window.speechSynthesis.onvoiceschanged = pickVoice; } catch (e) {} }
+const keyOf = t => String(t).normalize('NFC').replace(/\s+/g, ' ').trim();
+let player = null, playSeq = 0, unlocked = false, ttsPrimed = false;
+function getPlayer() { if (!player) { try { player = new Audio(); player.preload = 'auto'; } catch (e) { player = null; } } return player; }
+function unlockAudio() {
+  sfxInit();
+  if (!ttsPrimed && 'speechSynthesis' in window) { ttsPrimed = true; try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; window.speechSynthesis.speak(u); } catch (e) {} }
+  if (unlocked || !window.BKSILENT) return;
+  const a = getPlayer(); if (!a) return;
+  unlocked = true;
+  if (!a.paused) return;
+  try { a.src = window.BKSILENT; const pr = a.play(); if (pr && pr.catch) pr.catch(e => { if (e && e.name === 'NotAllowedError') unlocked = false; }); } catch (e) { unlocked = false; }
+}
+['pointerup', 'touchend', 'click', 'keydown'].forEach(ev => { try { window.addEventListener(ev, unlockAudio, { capture: true, passive: true }); } catch (e) {} });
+function stopAudio() {
+  audioToken++; busy = false;
+  try { if (player) { player.onended = null; player.onerror = null; player.pause(); } } catch (e) {}
+  try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+}
+function ttsPart(text, my, done) {
+  let fired = false;
+  const fin = () => { if (fired) return; fired = true; if (my === audioToken) done(); };
+  if (!('speechSynthesis' in window)) { setTimeout(fin, 250); return; }
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'hi-IN'; if (voice) u.voice = voice; u.rate = 0.85;
+    u.onend = fin; u.onerror = fin;
+    window.speechSynthesis.speak(u);
+    setTimeout(fin, 1200 + text.length * 140);
+  } catch (e) { setTimeout(fin, 250); }
+}
+function clipPart(src, text, my, done) {
+  const a = getPlayer();
+  if (!a) { ttsPart(text, my, done); return; }
+  const seq = ++playSeq; let fired = false, guard = 0;
+  const end = viaVoice => { if (fired || seq !== playSeq) return; fired = true; clearTimeout(guard); if (my !== audioToken) return; if (viaVoice) ttsPart(text, my, done); else done(); };
+  try {
+    a.onended = () => end(false); a.onerror = () => end(true); a.src = src;
+    const pr = a.play();
+    if (pr && pr.catch) pr.catch(e => { const n = e && e.name; if (n === 'AbortError') return; end(n !== 'NotAllowedError'); });
+    guard = setTimeout(() => end(false), 9000);
+  } catch (e) { setTimeout(() => end(false), 50); }
+}
+function say(text, onDone) {
+  stopAudio();
+  const my = audioToken;
+  const parts = (Array.isArray(text) ? text : [text]).map(t => (t == null ? '' : keyOf(t))).filter(Boolean);
+  parts.forEach(p => SPOKEN.push({ p, lv: S.lv, mode: S.mode, phase: S.phase }));
+  const fin = () => { if (my === audioToken) { busy = false; if (onDone) onDone(); } };
+  if (FAST || SHOTS || !parts.length) { setTimeout(fin, FAST || SHOTS ? 4 : 250); return; }
+  busy = true;
+  if (!parts.every(p => CLIPS[p])) { ttsPart(parts.join(' '), my, fin); return; }   // one voice per sentence
+  let i = 0;
+  const next = () => { if (my !== audioToken) return; if (i >= parts.length) { fin(); return; } const p = parts[i++]; clipPart(CLIPS[p], p, my, () => setTimeout(next, 110)); };
+  next();
+}
+// move on once at least `ms` has passed and the voice has finished (at most 7 s more)
+function afterSpeech(fn, ms) {
+  const g = S.gen, t0 = Date.now(), min = T(ms), cap = min + (FAST || SHOTS ? 0 : 7000);
+  let quietSince = 0;
+  const tick = () => {
+    if (g !== S.gen) return;
+    const t = Date.now();
+    if (busy) quietSince = 0; else if (!quietSince) quietSince = t;
+    if (t - t0 >= cap || (t - t0 >= min && quietSince && t - quietSince >= 250)) fn(); else setTimeout(tick, 60);
+  };
+  setTimeout(tick, Math.min(min, 60));
+}
+const PRAISE = ['शाबाश!', 'बहुत अच्छे!', 'बिल्कुल सही!'];
+let praiseN = 0;
+const praise = () => PRAISE[praiseN++ % PRAISE.length];
+
+/* ---------- marble clicks (Web Audio, very short) ---------- */
+let actx = null, lastClack = 0;
+function sfxInit() { try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) {} }
+function tone(f1, f2, dur, vol, type) {
+  if (!actx || FAST || SHOTS) return;
+  try {
+    const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'triangle'; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dur + 0.02);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.04);
+  } catch (e) {}
+}
+function clack(v) { const n = performance.now(); if (n - lastClack < 35) return; lastClack = n; tone(2600 + Math.random() * 700, 1500, 0.045, Math.min(0.22, 0.04 + v * 0.2)); }
+const plop = () => { tone(520, 880, 0.12, 0.16, 'sine'); setTimeout(() => tone(880, 1320, 0.1, 0.12, 'sine'), 90); };
+
+
+/* ===================== letters, pairs, look-alikes ===================== */
+const ALL = D.SET_ORDER.flatMap(s => D.SETS[s]);
+const EDGES = [].concat(
+  D.PAIRS.map(([a, b, kind]) => ({ a, b, kind, formal: true })),
+  D.LOOKS.map(([a, b]) => ({ a, b, kind: 'look', formal: false })),
+  D.HOME_PAIRS.map(([a, b]) => ({ a, b, kind: 'home', formal: false })));
+const touches = (e, l) => e.a === l || e.b === l;
+const otherEnd = (e, l) => (e.a === l ? e.b : e.a);
+const related = (x, y) => EDGES.some(e => touches(e, x) && touches(e, y));
+const partnersOf = (l, kinds, formalOnly) => [...new Set(EDGES.filter(e => touches(e, l) && kinds.includes(e.kind) && (!formalOnly || e.formal)).map(e => otherEnd(e, l)))];
+const openLetters = k => D.SET_ORDER.filter(s => k.sets.includes(s)).flatMap(s => D.SETS[s]);
+const syl = s => ({ c: s[0], m: s.slice(1) });
+// what kind of slip was it?
+function kindOf(target, tapped, rung) {
+  if (rung === 5) { const a = syl(target), b = syl(tapped); if (a.c === b.c) return 'matra'; if (related(a.c, b.c)) return 'look'; return 'other'; }
+  const es = EDGES.filter(e => touches(e, target) && touches(e, tapped));
+  if (es.some(e => e.kind === 'look')) return 'look';
+  if (es.length) return 'sound';
+  return 'other';
+}
+const PROFILE = { look: 'visual mismatch (2.7)', sound: 'phonetic (2.3)', soundSeen: 'decoding (2.6)', matra: 'matra (2.9)', other: 'decoding (2.6)' };
+
+/* ===================== saved children ===================== */
+const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+const KEY = 'lattu_kids_v1', DAYKEY = 'lattu_day';
+let KIDS = load(KEY, {});
+const saveKids = () => { try { localStorage.setItem(KEY, JSON.stringify(KIDS)); } catch (e) {} };
+const saveDay = () => { try { localStorage.setItem(DAYKEY, JSON.stringify(S.day)); } catch (e) {} };
+function newKid(name) { return { name, rung: 1, speed: 1, streak: 0, sets: D.START_SETS.slice(), rounds: [], since: 0, letters: {}, done: false, gate: false }; }
+function stat(k, l) { return k.letters[l] || (k.letters[l] = { seen: 0, wins: 0, clean: [], lastDay: 0, last: null, times: [], named: 0, mix: {}, stops: 0 }); }
+const median = a => { if (!a.length) return Infinity; const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+// sure: caught on two different days with no wrong tap since, quick catches, named right at least once
+const isSure = st => !!st && st.clean.length >= 2 && st.named >= 1 && median(st.times) < D.SURE_MS;
+const classOf = (k, l) => { const st = k.letters[l]; return !st || !st.seen ? 'new' : isSure(st) ? 'sure' : 'learning'; };
+const sureOf = k => openLetters(k).filter(l => isSure(k.letters[l]));
+
+/* ===================== state ===================== */
+const savedN = load('lattu_names', {});
+const S = {
+  screen: 'start', gen: 0, lv: 0, mode: 'two', day: load(DAYKEY, 1),
+  names: { p1: savedN.p1 || '', p2: savedN.p2 || '' },
+  kid: { p1: null, p2: null }, guest: { p1: false, p2: false }, decks: { p1: [], p2: [] },
+  nextStarter: 'p1', starter: 'p1', who: 'p1', turnNo: 0, turns: { p1: 0, p2: 0 }, results: { p1: [], p2: [] }, cards: { p1: [], p2: [] },
+  phase: 'idle', banner: null, cur: null, micFrom: null, heard: null, flashOn: false,
+  caught: 0, escaped: 0, thrown: 0, total: 0, maxGround: 0, result: null, fixPair: [], fixHint: false,
+  pulled: {}, log: [], events: { p1: [], p2: [] }, asr: 'scripted', bot: [], botNow: null,
+  confirmEnd: false, hold: false, held: null, t0: 0,
+};
+function bump() { S.gen++; }
+function later(fn, ms) { const g = S.gen; setTimeout(() => { if (g === S.gen) fn(); }, ms); }
+function then(fn, ms) { if (S.hold) S.held = fn; else afterSpeech(fn, ms); }
+function held(fn) { if (S.hold) S.held = fn; else fn(); }
+const nameOf = p => S.names[p] || D.PLAYERS[p].fallback;
+const other = p => (p === 'p1' ? 'p2' : 'p1');
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const av = (p, size, cls, art) => `<span class="av ${cls || ''}" style="--pc:${D.PLAYERS[p].color};width:${size + 8}px;height:${size + 8}px">${(art || A.kid)(p, size)}</span>`;
+function scale() { const r = $('screen').getBoundingClientRect(); return r.width / W || 1; }
+function local(e) { const r = $('screen').getBoundingClientRect(), s = scale(); return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s }; }
+function rel(el) { const r = el.getBoundingClientRect(), R = $('screen').getBoundingClientRect(), s = scale(); return { x: (r.left - R.left) / s, y: (r.top - R.top) / s, w: r.width / s, h: r.height / s }; }
+const rungOf = p => (S.guest[p] ? 1 : S.kid[p].rung);
+const isLast = () => S.turns.p1 >= D.TURNS && S.turns.p2 >= D.TURNS;
+const RULES = ['दो बच्चे बारी-बारी से खेलेंगे।', 'अक्षर पढ़ो, फिर डोरी खींचो।', 'लट्टू से अक्षर निकलेंगे। अपना अक्षर पकड़ो।', 'कोई और अक्षर छुआ, तो बारी खत्म।', 'पकड़ लिया, तो अक्षर तुम्हारा।', 'जिसके अक्षर ज़्यादा, उसकी जीत।'];
+
+/* ===================== which letters: the deck, and the other letters ===================== */
+// the letters she can be given at her rung
+function eligible(k, rung) {
+  const open = openLetters(k);
+  if (rung === 1) return open.filter(l => D.START_SETS.some(s => D.SETS[s].includes(l)));
+  if (rung === 4) { const r = open.filter(l => partnersOf(l, ['look', 'sound'], true).some(x => open.includes(x))); return r.length >= 3 ? r : open; }
+  if (rung === 5) return D.R5_CONS.flatMap(c => D.MATRAS.map(m => c + m));
+  return open;
+}
+// five letters a game: two she is learning, two she is sure of, one new
+function buildDeck(p) {
+  const k = S.kid[p], rung = rungOf(p), pool = eligible(k, rung);
+  if (S.guest[p]) return shuffle(pool).slice(0, D.TURNS).map(l => ({ letter: l, why: 'new' }));
+  const by = { new: [], learning: [], sure: [] };
+  pool.forEach(l => by[classOf(k, l)].push(l));
+  const st = l => k.letters[l];
+  by.learning.sort((a, b) => ((st(a).last === 'won') - (st(b).last === 'won')) || (st(a).lastDay - st(b).lastDay));   // lost last time first
+  by.sure = shuffle(by.sure);
+  if (rung === 5) by.new = shuffle(by.new);                                     // letters: new ones in set order
+  const fall = ['learning', 'new', 'sure'];
+  const deck = ['sure', 'learning', 'new', 'learning', 'sure'].map(w => { const src = by[w].length ? w : fall.find(f => by[f].length); return src ? { letter: by[src].shift(), why: src } : null; }).filter(Boolean);
+  while (deck.length < D.TURNS && pool.length) { const l = pick(pool); deck.push({ letter: l, why: classOf(k, l) }); }
+  return deck;
+}
+// the other letters the top throws, by rung
+function decoysFor(c) {
+  const k = S.kid[c.who], l = c.letter, n = c.R.decoys, open = openLetters(k);
+  if (c.rung === 5) return syllableDecoys(l, n, open);
+  let pool = [];
+  if (c.rung === 2) pool = partnersOf(l, ['look']).filter(x => open.includes(x));
+  else if (c.rung === 3) pool = partnersOf(l, ['look', 'sound', 'home']).filter(x => open.includes(x));
+  else if (c.rung === 4) {
+    pool = partnersOf(l, ['look', 'sound', 'home']).filter(x => open.includes(x) || D.SETS.F.includes(x));
+    const st = k.letters[l]; if (st) pool = pool.concat(Object.keys(st.mix).filter(x => x !== l));   // her past mix-ups
+    pool = [...new Set(pool)];
+  }
+  const nA = pool.length ? Math.round(n * c.R.alike) : 0, sp = shuffle(pool);
+  const out = Array.from({ length: nA }, (_, i) => sp[i % sp.length]);
+  // the rest look and sound nothing like it; her own letters first
+  const far = x => x !== l && !related(x, l) && !out.includes(x);
+  const rest = shuffle(open.filter(far)).concat(shuffle(ALL.filter(x => far(x) && !open.includes(x))));
+  for (let i = 0; out.length < n; i++) out.push(rest[i % rest.length]);
+  return out;
+}
+// R5: the same letter with other matras (about half), the same matra on a look-alike letter (about a quarter)
+function syllableDecoys(s, n, open) {
+  const { c, m } = syl(s);
+  const out = shuffle([''].concat(D.MATRAS).filter(x => x !== m)).slice(0, Math.round(n * 0.5)).map(x => c + x);
+  const look = partnersOf(c, ['look', 'sound', 'home']).filter(x => !D.SETS.F.includes(x)).sort((a, b) => open.includes(b) - open.includes(a));
+  for (let i = 0; look.length && i < Math.round(n * 0.25); i++) out.push(look[i % look.length] + m);
+  const rest = shuffle(D.R5_CONS.filter(x => x !== c && !look.includes(x)));
+  for (let i = 0; out.length < n; i++) { const t = rest[i % rest.length] + pick([''].concat(D.MATRAS)); if (t !== s) out.push(t); }
+  return out;
+}
+// the order the top throws them: one of hers early, never more than 3 others in a row
+function buildSeq(l, dec, nT) {
+  const base = Array(nT).fill(l).concat(dec);
+  for (let k = 0; k < 400; k++) {
+    const s = shuffle(base); if (s[0] !== l && s[1] !== l) continue;
+    let run = 0, ok = true; for (const x of s) { run = x === l ? 0 : run + 1; if (run > 3) { ok = false; break; } }
+    if (ok) return s;
+  }
+  const out = [], d = shuffle(dec); let t = nT;
+  while (t || d.length) { if (t) { out.push(l); t--; } for (let j = 0; j < 2 && d.length; j++) out.push(d.shift()); }
+  return out;
+}
+
+/* ===================== the game ===================== */
+function startGame() {
+  bump(); stopLoop(); clearTiles(); stopAudio(); S.held = null;
+  KIDS = load(KEY, {});
+  ['p1', 'p2'].forEach(p => {
+    const name = (S.names[p] || '').trim();
+    const guest = !name || (p === 'p2' && name === (S.names.p1 || '').trim());
+    S.guest[p] = guest;
+    if (guest) { if (!S.kid[p] || !S.kid[p].guest) S.kid[p] = Object.assign(newKid(''), { guest: true }); }   // a guest keeps her speed for this sitting only
+    else { if (!KIDS[name]) KIDS[name] = newKid(name); S.kid[p] = KIDS[name]; }
+    S.decks[p] = buildDeck(p);
+  });
+  saveKids();
+  S.starter = S.nextStarter; S.nextStarter = other(S.starter);       // who starts switches every game
+  S.who = S.starter; S.turnNo = 0; S.turns = { p1: 0, p2: 0 }; S.results = { p1: [], p2: [] }; S.cards = { p1: [], p2: [] };
+  S.log = []; S.events = { p1: [], p2: [] }; S.pulled = {}; S.confirmEnd = false; S.screen = 'game';
+  render(); startTurn();
+}
+function startTurn() {
+  const p = S.who, k = S.kid[p], rung = rungOf(p), R = D.RUNGS[rung];
+  const item = S.decks[p][S.turns[p]] || S.decks[p][0];
+  S.turns[p]++;
+  S.cur = { n: S.turnNo + 1, who: p, rung, R, letter: item.letter, why: item.why, need: R.need, speed: k.speed,
+    mic: { by: null, tries: 0, results: [], said: [], ms: null }, catches: [], wrong: null, fixTries: 0, entry: null };
+  S.lv = rung; S.caught = 0; S.escaped = 0; S.thrown = 0; S.total = R.targets + R.decoys; S.maxGround = 0; S.minGap = Infinity; S.onTop = false;
+  S.result = null; S.heard = null; S.micFrom = null; S.flashOn = false; S.fixHint = false;
+  resetTop(); clearTiles(); drawString(null);
+  S.banner = p; S.phase = 'banner'; renderUI();
+  say(`${nameOf(p)} की बारी।`);
+  later(micStep, T(1500));
+}
+// the mic step: a different job on every rung
+function micStep() {
+  if (S.phase !== 'banner') return;
+  S.banner = null;
+  const c = S.cur, l = c.letter, r = c.rung, f = other(S.who);
+  if (r === 1) { c.mic.by = 'self'; S.phase = 'echo'; renderUI(); say(['यह है', l, 'तुम भी बोलो।']); }
+  else if (r === 2 || r === 5) { c.mic.by = 'self'; S.phase = 'read'; renderUI(); say('पढ़कर बोलो।'); }       // no sound of the letter until she tries
+  else if (r === 3) {
+    if (openLetters(S.kid[f]).includes(l)) {        // her friend reads only letters she has met herself
+      c.mic.by = 'friend'; S.phase = 'eyes'; renderUI(); say(`${nameOf(S.who)}, आँखें बंद करो।`);
+      then(() => { if (S.phase !== 'eyes') return; S.phase = 'call'; renderUI(); say(`${nameOf(f)}, पढ़कर बोलो।`); }, 2000);
+    } else { c.mic.by = 'mitthu'; S.phase = 'tell'; renderUI(); say([`${nameOf(S.who)}, सुनो।`, l]); then(pullIt, 900); }
+  } else { c.mic.by = 'self'; S.phase = 'ready'; renderUI(); say('देखो, और झट से बोलो!'); then(flash, 500); }
+}
+// simulated on-device ASR (the prototype has no real speech check). It only checks the letter we expect.
+const hash = s => [...s].reduce((a, ch) => a + ch.codePointAt(0), 0);
+function micSim(l, attempt) {
+  const h = hash(l), ms = 650 + (h % 9) * 130;
+  const near = (partnersOf(l.length > 1 && S.cur.rung === 5 ? l[0] : l, ['look', 'sound'])[0] || pick(ALL.filter(x => x !== l)));
+  if (S.asr === 'always') return { result: 'right', ms };
+  if (S.asr === 'other') return { result: 'other', said: near, ms };
+  if (S.asr === 'unheard') return { result: 'unheard' };
+  if (S.asr === 'home') return D.HOME[l] ? { result: 'variant', said: D.HOME[l], ms } : { result: 'right', ms };
+  const s = h % 7;                                                         // scripted
+  if (s === 0) return attempt === 1 ? { result: 'unheard' } : { result: 'right', ms: ms + 300 };
+  if (s === 1) return attempt === 1 ? { result: 'other', said: near, ms } : { result: 'right', ms: ms + 300 };
+  if (s === 2 && S.cur.rung !== 1) return { result: 'other', said: near, ms };
+  return { result: 'right', ms };
+}
+const G = window.G = {};
+G.mic = () => {
+  if (!['echo', 'read', 'call'].includes(S.phase)) return;
+  S.micFrom = S.phase; S.phase = 'listen'; renderUI(); stopAudio();
+  const r = micSim(S.cur.letter, S.cur.mic.tries + 1);
+  later(() => held(() => heardIt(r)), r.result === 'unheard' ? T(2200) : T(1300));
+};
+// R4: the card shows for about a second; the mic opens by itself and times her
+function flash() {
+  if (S.phase !== 'ready') return;
+  S.micFrom = 'flash'; S.phase = 'flash'; S.flashOn = true; renderUI(); stopAudio();
+  tone(660, 990, 0.08, 0.08, 'sine');
+  later(() => { if (S.phase === 'flash' && S.flashOn) { S.flashOn = false; renderUI(); } }, FAST ? 20 : 1000);
+  const r = micSim(S.cur.letter, S.cur.mic.tries + 1);
+  later(() => held(() => heardIt(r)), FAST ? 35 : r.result === 'unheard' ? 3000 : r.ms);
+}
+function heardIt(r) {
+  if (S.phase !== 'listen' && S.phase !== 'flash') return;
+  const c = S.cur, m = c.mic, l = c.letter, from = S.micFrom, ok = r.result === 'right' || r.result === 'variant';
+  m.tries++; m.results.push(r.result); m.said.push(r.said || '');
+  if (from === 'flash' && ok) m.ms = r.ms;
+  noteNaming(m.by === 'friend' ? other(S.who) : S.who, l, ok);
+  S.flashOn = false;
+  if (ok) {
+    S.heard = 'right'; S.phase = 'heard'; renderUI();
+    say(c.rung === 1 ? 'शाबाश!' : c.rung === 3 ? 'सही!' : ['सही!', l]);
+    then(afterMic, 900);
+  } else if (m.tries < D.TRIES) {
+    S.heard = r.result;
+    if (from === 'flash') { S.phase = 'ready'; renderUI(); say('फिर से देखो।'); then(flash, 500); }
+    else { S.phase = from; renderUI(); say(r.result === 'unheard' ? 'ज़ोर से बोलो।' : 'फिर से बोलो।'); }
+  } else {                                                                // two tries: Mitthu says it, and the game goes on
+    S.heard = 'mitthu'; S.phase = 'heard'; renderUI();
+    say(c.rung === 3 ? 'ठीक है।' : ['सुनो, यह है', l]);
+    then(afterMic, 900);
+  }
+}
+function afterMic() {
+  if (S.phase !== 'heard') return;
+  if (S.cur.rung === 3) { S.phase = 'open'; renderUI(); say(['आँखें खोलो!', 'सुनो:', S.cur.letter]); then(pullIt, 900); }   // Mitthu always repeats it
+  else pullIt();
+}
+function pullIt() { if (S.screen !== 'game') return; S.phase = 'pull'; renderUI(); drawString(HANDLE0); say('डोरी खींचो।'); }
+G.pull = () => {
+  if (S.phase !== 'pull') return;
+  S.pulled[S.who] = true; drawString(null); stopAudio();
+  tone(200, 600, 0.5, 0.06, 'sawtooth');
+  startSpin(); startStream();
+};
+G.hear = () => {
+  const ph = S.phase, c = S.cur || {}, l = c.letter;
+  if (ph === 'echo') say(['यह है', l, 'तुम भी बोलो।']);
+  else if (ph === 'read') say(c.mic.tries ? [l] : 'पढ़कर बोलो।');
+  else if (ph === 'eyes') say(`${nameOf(S.who)}, आँखें बंद करो।`);
+  else if (ph === 'call') say(`${nameOf(other(S.who))}, पढ़कर बोलो।`);
+  else if (ph === 'tell' || ph === 'open') say(['सुनो:', l]);
+  else if (ph === 'ready') say('देखो, और झट से बोलो!');
+  else if (ph === 'pull') say('डोरी खींचो।');
+  else if (ph === 'catch') { if (c.rung !== 4) say([l, 'पकड़ो!']); }       // R4: heard once, no replay
+  else if (ph === 'fix') say(S.fixHint ? [`${l} यह है।`] : [`यह ${c.wrong.tile} है।`, `${l} कौन सा है?`]);
+  else if (['heard', 'won', 'lost', 'fixed'].includes(ph)) say(line().replace(/<[^>]+>/g, ''));
+};
+
+/* ===================== the stream: one at a time, each stays a few seconds, then fades ===================== */
+let raf = 0, last = 0, streak = null, ground = [], stream = null, slotsAll = [];
+function resetTop() {
+  const lat = $('lat'); if (!lat) return;
+  lat.style.transition = 'none'; lat.style.transform = 'none'; lat.classList.remove('spinning');
+  if (streak) { streak.cancel(); streak = null; }
+}
+function startSpin() {
+  const lat = $('lat'); lat.classList.add('spinning');
+  try { streak = lat.querySelector('.lt-streak').animate([{ transform: 'translateX(0px)' }, { transform: 'translateX(34px)' }], { duration: 240, iterations: Infinity }); } catch (e) { streak = null; }
+}
+function stopLoop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
+// landing places: a grid around the top, never on it; pieces are 58 wide and never touch
+function gridSlots() {
+  const out = [];
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 5; c++) {
+    const x = 38 + c * 71, y = 104 + r * 64, ex = (x - LAT.x) / 92, ey = (y - LAT.y) / 118;
+    if (ex * ex + ey * ey >= 1) out.push({ x, y, k: r * 5 + c });
+  }
+  return out;
+}
+function startStream() {
+  const c = S.cur, R = c.R, sp = c.speed;
+  const seq = buildSeq(c.letter, decoysFor(c), R.targets);
+  stream = { seq, i: 0, t: 0, nextAt: 300 * K, every: R.every / sp * K, stays: R.stays / sp * K, max: R.max, recent: [] };
+  stream.expect = seq.length * stream.every + stream.stays * 0.5;
+  slotsAll = gridSlots(); ground = [];
+  S.total = seq.length; S.thrown = 0;
+  S.botNow = S.bot.length ? S.bot.shift() : null;
+  S.phase = 'catch'; S.t0 = performance.now(); renderUI();
+  say(c.rung === 4 ? 'पकड़ो!' : [c.letter, 'पकड़ो!']);
+  last = performance.now(); raf = requestAnimationFrame(frame);
+}
+function throwPiece(text) {
+  const st = stream, used = new Set(ground.map(p => p.slot.k));
+  let free = slotsAll.filter(s => !used.has(s.k) && !st.recent.includes(s.k));
+  if (!free.length) free = slotsAll.filter(s => !used.has(s.k));
+  const s = pick(free); st.recent = [s.k].concat(st.recent).slice(0, 3);
+  const x = s.x + (Math.random() * 12 - 6), y = s.y + (Math.random() * 6 - 3);
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = `lt-tile ak ${S.cur.rung === 5 ? 'sy' : ''}`; b.textContent = text; b.setAttribute('aria-label', text);
+  const p = { el: b, text, target: text === S.cur.letter, x, y, slot: s, land: st.t + (FAST ? 0 : FLIGHT), dead: false };
+  b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); tapTile(p); });
+  b.addEventListener('click', e => { if (e.detail === 0) tapTile(p); });
+  Object.assign(b.style, { left: x - 29 + 'px', top: y - 29 + 'px' });
+  $('tiles').appendChild(b);
+  if (!FAST) {
+    const x0 = ORIGIN.x - 29, y0 = ORIGIN.y - 29, x1 = x - 29, y1 = y - 29;
+    try { b.animate([{ left: x0 + 'px', top: y0 + 'px', opacity: 0 }, { offset: 0.55, left: (x0 + (x1 - x0) * 0.62) + 'px', top: (y0 + (y1 - y0) * 0.62 - 46) + 'px', opacity: 1 }, { left: x1 + 'px', top: y1 + 'px', opacity: 1 }], { duration: FLIGHT, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'backwards' }); } catch (e) {}
+  }
+  ground.forEach(g => { S.minGap = Math.min(S.minGap, Math.hypot(g.x - x, g.y - y)); });
+  if (((x - LAT.x) / 92) ** 2 + ((y - LAT.y) / 118) ** 2 < 1) S.onTop = true;
+  ground.push(p); S.maxGround = Math.max(S.maxGround, ground.length);
+  tone(480 + Math.random() * 160, 300, 0.07, 0.05, 'triangle');
+}
+function escape(p) {
+  p.dead = true; ground = ground.filter(x => x !== p);
+  if (p.target) S.escaped++;
+  if (FAST || SHOTS) { p.el.remove(); return; }
+  p.el.style.pointerEvents = 'none';
+  try { const a = p.el.animate([{ opacity: +p.el.style.opacity || 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(.6)' }], { duration: 220, fill: 'forwards' }); a.onfinish = () => p.el.remove(); } catch (e) { p.el.remove(); }
+}
+const targetsLeft = () => ground.filter(p => p.target).length + stream.seq.slice(stream.i).filter(x => x === S.cur.letter).length;
+function frame(now) {
+  raf = 0; if (S.phase !== 'catch' || !stream) return;
+  const st = stream, dt = Math.min(now - last, 100); last = now; st.t += dt;
+  for (const p of ground.slice()) {
+    const age = st.t - p.land;
+    if (age >= st.stays) { escape(p); continue; }
+    if (age > 0) { const f = age / st.stays; p.el.style.opacity = f > 0.6 ? (1 - 0.7 * (f - 0.6) / 0.4).toFixed(2) : ''; }
+  }
+  if (st.i < st.seq.length && st.t >= st.nextAt && ground.length < st.max) { throwPiece(st.seq[st.i++]); S.thrown = st.i; st.nextAt = st.t + st.every; }
+  if (S.botNow) { bot(st); if (S.phase !== 'catch') return; }
+  // the top is the clock: it slows and wobbles more and more as the throws run out
+  const frac = Math.min(1, st.t / st.expect);
+  if (streak) streak.playbackRate = Math.max(0.15, 1 - 0.85 * frac);
+  const amp = 1.5 + 11 * Math.pow(frac, 3), a = Math.sin(st.t / K / 1000 * Math.PI * 2 * (1.8 - 0.8 * frac)) * amp;
+  const lat = $('lat'); if (lat) lat.style.transform = `rotate(${a.toFixed(2)}deg)`;
+  if (S.caught + targetsLeft() < S.cur.need) { endTurn('time'); return; }     // not enough of hers left: the top stops
+  raf = requestAnimationFrame(frame);
+}
+// tests only: play the turn the way the plan says
+function bot(st) {
+  const a = S.botNow, d = (a === 'slowwin' ? 1800 : 300) * K;
+  if (a === 'win' || a === 'slowwin') { const p = ground.find(x => x.target && st.t - x.land >= d); if (p) tapTile(p); }
+  else if (a === 'wrong') { const p = S.caught >= 1 ? ground.find(x => !x.target && st.t >= x.land) : ground.find(x => x.target && st.t >= x.land); if (p) tapTile(p); }
+}
+function clearTiles() { ground.forEach(t => t.el.remove()); ground = []; stream = null; const b = $('tiles'); if (b) { b.innerHTML = ''; b.classList.remove('over'); } }
+function tapTile(p) {
+  if (S.phase !== 'catch' || p.dead) return;
+  if (p.target) catchIt(p);
+  else { p.el.classList.add('no'); S.cur.wrong = { tile: p.text, kind: kindOf(S.cur.letter, p.text, S.cur.rung) }; endTurn('wrong'); }
+}
+function catchIt(p) {
+  const c = S.cur;
+  p.dead = true; ground = ground.filter(x => x !== p); p.el.style.pointerEvents = 'none';
+  c.catches.push(Math.round(Math.max(0, stream.t - p.land) / K));
+  S.caught++; tone(620 + S.caught * 40, 900, 0.12, 0.12, 'sine');
+  const slot = document.querySelector(`.lt-prog i[data-k="${S.caught - 1}"]`);
+  if (slot && !FAST) {
+    const r = rel(slot);
+    try { const a = p.el.animate([{ left: p.x - 29 + 'px', top: p.y - 29 + 'px', width: '58px', height: '58px', opacity: 1 }, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', opacity: 0.3 }], { duration: 360, easing: 'cubic-bezier(.5,0,.8,.45)', fill: 'forwards' }); a.onfinish = () => p.el.remove(); } catch (e) { p.el.remove(); }
+  } else p.el.remove();
+  renderProg();
+  if (c.rung === 1) say(c.letter);                         // R1: every catch says the letter
+  if (S.caught >= c.need) endTurn('won');
+}
+function endTurn(result) {
+  if (S.phase !== 'catch') return;
+  stopLoop(); if (streak) streak.pause();
+  const c = S.cur, p = S.who;
+  S.result = result;
+  ground.forEach(t => { t.el.style.pointerEvents = 'none'; if (result !== 'won' && t.target) t.el.classList.add('missed'); });
+  const tb = $('tiles'); if (tb) tb.classList.add('over');
+  S.results[p].push(result === 'won' ? 'won' : 'lost');
+  c.entry = { n: c.n, who: p, name: nameOf(p), guest: S.guest[p], rung: c.rung, letter: c.letter, why: c.why,
+    mic: { by: c.mic.by, tries: c.mic.tries, results: c.mic.results.slice(), said: c.mic.said.slice(), ms: c.mic.ms },
+    catches: c.catches.slice(), escaped: S.escaped, need: c.need, caught: S.caught, thrown: S.thrown, result,
+    wrong: c.wrong, fixed: null, speed: c.speed, day: S.day, maxGround: S.maxGround, minGap: S.minGap, onTop: S.onTop,
+    seq: stream ? stream.seq.slice() : [], sets: S.kid[p].sets.slice(), every: stream ? stream.every / K : 0, stays: stream ? stream.stays / K : 0 };
+  S.log.push(c.entry);
+  noteTurn(p, c, result);
+  nudge(p, result === 'won');
+  const lat = $('lat');
+  if (result === 'won') {
+    S.cards[p].push(c.letter); S.phase = 'won'; renderUI(); plop(); flyCard();
+    say([praise(), `${c.letter} तुम्हारा।`]);
+    if (lat) { lat.style.transition = FAST ? 'none' : 'transform .5s ease-out'; lat.style.transform = 'none'; }
+    then(nextTurn, 1700);
+    return;
+  }
+  if (lat) { lat.style.transition = FAST ? 'none' : 'transform .75s ease-in'; lat.style.transform = 'translate(10px, 8px) rotate(78deg)'; }
+  tone(440, 110, 0.5, 0.12, 'triangle');
+  if (result === 'wrong') {
+    // fix it: the wrong one next to the right one; she taps the right one, then the turn passes
+    S.fixPair = shuffle([c.wrong.tile, c.letter]); S.fixHint = false; S.phase = 'fix'; renderUI();
+    say([`यह ${c.wrong.tile} है।`, `${c.letter} कौन सा है?`]);
+  } else {
+    S.phase = 'lost'; renderUI();
+    say(isLast() ? ['लट्टू रुक गया!'] : ['लट्टू रुक गया!', `अब ${nameOf(other(p))} की बारी।`]);
+    then(nextTurn, 2200);
+  }
+}
+G.fix = i => {
+  if (S.phase !== 'fix') return;
+  const c = S.cur, t = S.fixPair[i]; if (t == null) return;
+  c.fixTries++;
+  if (t === c.letter) {
+    if (c.entry) c.entry.fixed = c.fixTries === 1 ? 'first try' : 'after help';
+    S.phase = 'fixed'; renderUI(); tone(620, 900, 0.12, 0.1, 'sine');
+    say(isLast() ? [`हाँ, यह ${c.letter} है!`] : [`हाँ, यह ${c.letter} है!`, `अब ${nameOf(other(S.who))} की बारी।`]);
+    then(nextTurn, 1500);
+  } else { S.fixHint = true; renderUI(); say([`यह ${t} है।`, `${c.letter} यह है।`]); }
+};
+function nextTurn() {
+  if (S.screen !== 'game' || S.phase === 'end') return;
+  S.turnNo++;
+  if (isLast()) { endGame(false); return; }
+  S.who = other(S.who);                                   // strictly one each
+  startTurn();
+}
+
+/* ===================== what the phone keeps ===================== */
+function noteTurn(p, c, result) {
+  if (S.guest[p]) return;
+  const st = stat(S.kid[p], c.letter);
+  st.seen++; st.lastDay = S.day; st.last = result;
+  st.times = st.times.concat(c.catches).slice(-10);
+  if (result === 'won' && !st.clean.includes(S.day)) st.clean.push(S.day);
+  if (result === 'won') st.wins++;
+  if (result === 'wrong') { st.clean = []; st.mix[c.wrong.tile] = (st.mix[c.wrong.tile] || 0) + 1; }
+  if (result === 'time') st.stops++;
+  saveKids();
+}
+function noteNaming(p, l, ok) { if (S.guest[p] || !ok) return; stat(S.kid[p], l).named++; saveKids(); }
+// two wins in a row: 10% faster; a loss: 10% slower; never more than 20% from the rung's pace
+function nudge(p, won) {
+  const k = S.kid[p];
+  if (won) { k.streak = (k.streak || 0) + 1; if (k.streak >= 2) { k.speed = Math.min(1.2, +(k.speed * 1.1).toFixed(3)); k.streak = 0; } }
+  else { k.streak = 0; k.speed = Math.max(0.8, +(k.speed * 0.9).toFixed(3)); }
+  if (!S.guest[p]) saveKids();
+}
+// after a full game: the round, moving between rungs, and new letter sets
+function evaluate(p, stopped) {
+  const k = S.kid[p], name = nameOf(p), ev = [], mine = S.log.filter(e => e.who === p);
+  if (!stopped && mine.length >= D.TURNS) {
+    const wins = mine.filter(e => e.result === 'won').length, wrong = mine.filter(e => e.result === 'wrong').length;
+    const round = { day: S.day, rung: k.rung, wins, wrong, pass: wins >= D.PASS };
+    k.rounds.push(round);
+    const here = k.rounds.slice(k.since), r1 = here[here.length - 2], r2 = round;
+    let move = 0, why = '';
+    if (k.rung <= 2 && wins === D.TURNS && wrong === 0) { move = 1; why = 'perfect round (fast lane)'; }
+    else if (r1 && r1.pass && r2.pass && r1.day !== r2.day) { move = 1; why = `passed twice in a row, on days ${r1.day} and ${r2.day}`; }
+    else if (r1 && r1.wins <= 2 && r2.wins <= 2) { move = -1; why = 'two rounds in a row with 2 wins or fewer'; }
+    k.gate = false;
+    if (move === 1 && k.rung === 3 && !k.sets.includes('D')) { move = 0; k.gate = true; ev.push({ kind: 'gate', note: `${why}, but R4 waits for Set D` }); }
+    if (move === 1 && k.rung === 5) {
+      move = 0;
+      if (!k.done) { k.done = true; const t = `शाबाश ${name}! अब शब्दों वाले खेल।`; ev.push({ kind: 'leave', note: why, line: t, say: t }); }
+    }
+    if (move) {
+      const from = k.rung, to = Math.max(1, Math.min(5, k.rung + move));
+      if (to !== from) {
+        k.rung = to; k.speed = 1; k.streak = 0; k.since = k.rounds.length;
+        const t = `शाबाश ${name}! अगली बार थोड़ा और मुश्किल।`;
+        ev.push(move > 0 ? { kind: 'up', from, to, note: why, line: t, say: t } : { kind: 'down', from, to, note: why });
+      }
+    }
+    round.after = k.rung;
+  }
+  const open = openLetters(k), sure = sureOf(k), next = D.SET_ORDER.find(s => !k.sets.includes(s));
+  if (next && open.length && sure.length / open.length >= D.OPEN_AT) {
+    k.sets.push(next);
+    ev.push({ kind: 'set', set: next, letters: D.SETS[next], line: 'नए अक्षर', say: 'नए अक्षर खुले!', note: `sure of ${sure.length} of ${open.length} open letters` });
+  }
+  return ev;
+}
+function endGame(stopped) {
+  bump(); stopLoop(); clearTiles(); drawString(null); S.confirmEnd = false; S.banner = null;
+  S.events = { p1: [], p2: [] };
+  ['p1', 'p2'].forEach(p => { if (!S.guest[p]) S.events[p] = evaluate(p, stopped); });
+  saveKids();
+  S.phase = 'end'; renderUI();
+  const a = S.cards.p1.length, b = S.cards.p2.length, lines = ['खेल खत्म!', a === b ? 'बराबर!' : `${nameOf(a > b ? 'p1' : 'p2')} की जीत!`];
+  ['p1', 'p2'].forEach(p => S.events[p].forEach(e => { if (e.say) lines.push(e.say); }));
+  say(lines);
+}
+// the won card flies from the bubble up to her score
+function flyCard() {
+  if (FAST || SHOTS) return;
+  const src = document.querySelector('#kb .lt-target'), dst = $('chip-' + S.who); if (!src || !dst) return;
+  const a = rel(src), b = rel(dst), g = document.createElement('div');
+  g.className = `lt-fly ${S.cur.rung === 5 ? 'sy' : ''}`; g.textContent = S.cur.letter; $('lt').appendChild(g);
+  try { g.animate([{ left: a.x + 'px', top: a.y + 'px', width: a.w + 'px', height: a.h + 'px', opacity: 1 }, { left: b.x + b.w - 34 + 'px', top: b.y + 8 + 'px', width: '28px', height: '30px', opacity: 0.3 }], { duration: 800, easing: 'cubic-bezier(.5,-0.2,.6,1)', fill: 'forwards' }); } catch (e) {}
+  setTimeout(() => { g.remove(); const n = $('pouch-' + S.who); if (n) { n.classList.remove('bump'); void n.offsetWidth; n.classList.add('bump'); } }, 820);
+}
+G.endAsk = () => { if (S.screen === 'game' && S.phase !== 'end') { S.confirmEnd = true; S.banner = null; renderUI(); } };
+G.endNo = () => { S.confirmEnd = false; renderUI(); };
+G.endYes = () => endGame(true);                         // a stopped game is not a round
+G.again = () => startGame();
+G.toStart = () => { bump(); stopAudio(); stopLoop(); clearTiles(); S.screen = 'start'; S.phase = 'idle'; KIDS = load(KEY, {}); render(); };
+G.start = () => {
+  const n1 = ($('name1') || {}).value || '', n2 = ($('name2') || {}).value || '';
+  S.names = { p1: n1.trim().slice(0, 12), p2: n2.trim().slice(0, 12) };
+  try { localStorage.setItem('lattu_names', JSON.stringify(S.names)); } catch (e) {}
+  sfxInit(); startGame();
+};
+G.typed = () => ['p1', 'p2'].forEach(p => { const el = $('info-' + p); if (el) el.innerHTML = infoFor(p); });
+G.rules = () => say(RULES);
+G.sayText = t => say(t);
+// reviewer controls
+G.asr = m => { S.asr = m; renderSide(); };
+function kidFor(p) {
+  if (S.screen === 'game' && S.kid[p]) return S.kid[p];
+  const n = typedName(p); return n ? KIDS[n] || null : null;
+}
+function ensureKid(p) {
+  if (S.screen === 'game') return S.guest[p] ? null : S.kid[p];
+  const n = typedName(p); if (!n || (p === 'p2' && n === typedName('p1'))) return null;
+  return KIDS[n] || (KIDS[n] = newKid(n));
+}
+function changed(p) { saveKids(); if (S.screen === 'game' && !S.guest[p]) S.decks[p] = buildDeck(p); renderSide(); if (S.screen === 'start') G.typed(); }
+G.setRung = (p, r) => { const k = ensureKid(p); if (!k) return; k.rung = r; k.speed = 1; k.streak = 0; k.since = k.rounds.length; k.gate = false; changed(p); };
+G.openTo = (p, s) => { const k = ensureKid(p); if (!k) return; k.sets = D.SET_ORDER.slice(0, D.SET_ORDER.indexOf(s) + 1); changed(p); };
+G.makeSure = p => { const k = ensureKid(p); if (!k) return; openLetters(k).forEach(l => { const st = stat(k, l); st.seen = Math.max(1, st.seen); st.clean = [S.day - 1, S.day]; st.times = [900, 1000]; st.named = Math.max(1, st.named); st.last = 'won'; }); changed(p); };
+G.nextDay = () => { S.day++; saveDay(); renderSide(); };
+G.resetKids = () => { KIDS = {}; saveKids(); S.day = 1; saveDay(); S.kid = { p1: null, p2: null }; G.toStart(); };
+
+/* ===================== the string: pull it to spin the top ===================== */
+let drag = null;
+function drawString(h) {
+  const svg = $('str'); if (!svg) return;
+  if (!h) { svg.innerHTML = ''; return; }
+  const sx = LAT.x + 44, sy = LAT.y + 6;
+  svg.innerHTML = `<path d="M${sx} ${sy} Q${(sx + h.x) / 2 + 10} ${Math.max(sy, h.y) + 24} ${h.x} ${h.y}" stroke="#F3E2BF" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M${sx} ${sy} Q${(sx + h.x) / 2 + 10} ${Math.max(sy, h.y) + 24} ${h.x} ${h.y}" stroke="#8A6438" stroke-width="1.4" fill="none" stroke-dasharray="3 4"/>
+    <circle cx="${h.x}" cy="${h.y}" r="17" fill="#9A5F2B" stroke="#6E3D18" stroke-width="3"/><circle cx="${h.x - 5}" cy="${h.y - 5}" r="4" fill="#fff" opacity=".4"/>
+    ${drag ? '' : `<circle class="str-glow" cx="${h.x}" cy="${h.y}" r="24" fill="none" stroke="#fff" stroke-width="3"/>`}`;
+}
+function onDown(e) {
+  if (S.screen !== 'game' || S.phase !== 'pull' || S.confirmEnd) return;
+  if (e.target.closest && e.target.closest('button,input')) return;
+  const p = local(e); if (Math.hypot(p.x - HANDLE0.x, p.y - HANDLE0.y) > 44) return;
+  drag = { id: e.pointerId, x0: p.x, y0: p.y, moved: false };
+  try { $('screen').setPointerCapture(e.pointerId); } catch (err) {}
+  const dm = document.querySelector('.pull-demo'); if (dm) dm.remove();
+  drawString(HANDLE0);
+}
+function onMove(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const p = local(e), dx = p.x - drag.x0, dy = p.y - drag.y0;
+  if (Math.hypot(dx, dy) > 6) drag.moved = true;
+  drawString({ x: Math.max(20, Math.min(W - 20, HANDLE0.x + dx)), y: Math.max(TOPBAR + 20, Math.min(600, HANDLE0.y + dy)) });
+  if (Math.hypot(dx, dy) >= PULL) { drag = null; G.pull(); }
+}
+function onUp(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const d = drag; drag = null;
+  if (!d.moved) G.pull(); else drawString(HANDLE0);   // a tap on the bead also works
+}
+
+/* ===================== screens ===================== */
+const SHEET = ['echo', 'read', 'listen', 'heard', 'eyes', 'call', 'tell', 'ready', 'flash', 'open', 'fix', 'fixed'];
+function render() {
+  const sc = $('screen');
+  if (S.screen === 'start') { sc.innerHTML = startHTML(); renderSide(); return; }
+  sc.innerHTML = `<div class="lt" id="lt">
+    <div class="kc-layer">${A.ground(false)}</div>
+    <div class="kc-layer">${A.ring(LAT.x, LAT.y + 10, 150)}</div>
+    <div class="lt-shadow" style="left:${LAT.x - 40}px;top:${LAT.y + 64}px"></div>
+    <div class="lt-top" id="lat" style="left:${LAT.x - LAT.w / 2}px;top:${LAT_TOP}px;width:${LAT.w}px">${A.lattu(LAT.w, 'g')}</div>
+    <svg class="lt-str" id="str" viewBox="0 0 360 720" width="360" height="720"></svg>
+    <div class="lt-tiles" id="tiles"></div>
+    <div id="ui"></div></div>`;
+  ground = []; renderUI();
+}
+function renderUI() {
+  if (S.screen !== 'game' || !$('ui')) return;
+  const P = D.PLAYERS[S.who];
+  $('lt').style.setProperty('--pc', P.color); $('lt').style.setProperty('--pcd', P.dark);
+  const sheet = SHEET.includes(S.phase), hadSheet = !!document.querySelector('#ui .rs');
+  let h = topHTML();
+  if (sheet) h += sheetHTML(!hadSheet);
+  else if (S.phase !== 'end') h += `<div class="kb" id="kb">${mitthuLine()}</div>`;
+  if (S.phase === 'pull' && !S.pulled[S.who]) h += `<div class="pull-demo" style="left:${HANDLE0.x}px;top:${HANDLE0.y}px">${A.IC.hand(46)}</div>`;
+  if (S.banner) h += bannerHTML(S.banner);
+  if (S.phase === 'end') h += `<div class="cs-over">${endCard()}</div>`;
+  if (S.confirmEnd) h += `<div class="cs-over">${confirmCard()}</div>`;
+  $('ui').innerHTML = h;
+  renderSide();
+}
+function topHTML() {
+  const card = p => { const pl = D.PLAYERS[p], on = S.who === p && S.phase !== 'end'; return `<div class="tc ${on ? 'on' : ''}" id="chip-${p}" style="--pc:${pl.color};--pcd:${pl.dark}"><span class="tc-av">${A.kid(p, 30)}</span><span class="tc-name">${esc(nameOf(p))}</span><b class="tc-n" id="pouch-${p}">${S.cards[p].length}</b></div>`; };
+  return `<div class="top"><button class="top-back" id="btnEnd" onclick="G.endAsk()" aria-label="खेल रोकें">${A.IC.back(20)}</button>${card('p1')}${card('p2')}</div>`;
+}
+const retryLine = () => (S.heard === 'unheard' ? 'ज़ोर से बोलो' : 'फिर से बोलो');
+// Mitthu's one line: the same words he says
+function line() {
+  const ph = S.phase, c = S.cur || {}, l = c.letter, me = esc(nameOf(S.who)), f = esc(nameOf(other(S.who)));
+  switch (ph) {
+    case 'banner': return `${me} की बारी`;
+    case 'echo': return S.heard ? retryLine() : 'तुम भी बोलो';
+    case 'read': return S.heard ? retryLine() : 'पढ़कर बोलो';
+    case 'eyes': return `${me}, आँखें बंद करो`;
+    case 'call': return S.heard ? retryLine() : `${f}, पढ़कर बोलो`;
+    case 'tell': return `${me}, सुनो`;
+    case 'ready': return S.heard ? 'फिर से देखो' : 'देखो, झट से बोलो!';
+    case 'flash': return 'झट से बोलो!';
+    case 'listen': return 'सुन रहा हूँ…';
+    case 'heard': return S.heard === 'right' ? (c.rung === 1 ? 'शाबाश!' : 'सही!') : c.rung === 3 ? 'ठीक है' : `सुनो, यह ${l} है`;
+    case 'open': return 'आँखें खोलो! सुनो…';
+    case 'pull': return 'डोरी खींचो';
+    case 'won': return `शाबाश! ${l} तुम्हारा`;
+    case 'lost': return 'लट्टू रुक गया!';
+    case 'fix': return S.fixHint ? `${l} यह है` : `यह ${c.wrong.tile} है। ${l} कौन सा है?`;
+    case 'fixed': return `हाँ, यह ${l} है!`;
+  }
+  return '';
+}
+const canHear = () => { const ph = S.phase, r = S.cur && S.cur.rung; return !(r === 4 && ['ready', 'flash', 'listen', 'catch'].includes(ph)); };
+// while she catches: her letter (or ? when she only heard it), and a box for each one she needs
+function progHTML() {
+  const c = S.cur, chip = c.rung <= 2 ? `<span class="lt-target ${c.rung === 5 ? 'sy' : ''}">${c.letter}</span>` : '<span class="lt-target q">?</span>';
+  return `${chip}<span class="lt-prog ${c.rung === 5 ? 'sy' : ''}" style="--bw:${c.need > 5 ? 23 : 27}px">${Array.from({ length: c.need }, (_, k) => `<i data-k="${k}" class="${k < S.caught ? 'on' : ''}">${k < S.caught ? c.letter : ''}</i>`).join('')}</span>`;
+}
+function renderProg() { const p = document.querySelector('.lt-prog'); if (p) p.outerHTML = progHTML().replace(/^<span class="lt-target[^"]*">.*?<\/span>/, ''); renderSide(); }
+function mitthuLine() {
+  const ph = S.phase, c = S.cur || {}, good = ph === 'won' || ph === 'fixed' || (ph === 'heard' && S.heard === 'right');
+  const mood = good ? 'glad' : ['listen', 'catch', 'flash'].includes(ph) ? 'curious' : 'idle';
+  const catching = ph === 'catch', reveal = ph === 'won' || ph === 'lost';
+  const body = catching ? progHTML() : `${reveal ? `<span class="lt-target ${c.rung === 5 ? 'sy' : ''}">${c.letter}</span>` : ''}<span class="mb-t">${line()}</span>`;
+  const spk = canHear() ? `<button class="mb-spk" id="btnHear" onclick="G.hear()" aria-label="फिर सुनो">${A.IC.spk(22)}</button>` : '';
+  return `<div class="mb ${catching ? 'wide' : ''}"><span class="mb-m">${A.mitthu(48, mood)}</span><div class="mb-b ${good ? 'good' : ''} ${catching ? 'hid' : ''}" id="bubble">${body}${spk}</div></div>`;
+}
+function micHTML(on, auto) { return `<button class="rs-mic ${on ? 'on' : ''}" id="btnMic" ${auto ? 'disabled' : 'onclick="G.mic()"'} aria-label="बोलो"><span class="rs-mic-c">${on ? '<span class="bars"><i></i><i></i><i></i><i></i></span>' : A.IC.mic(34)}</span><span class="rs-mic-t">बोलो</span></button>`; }
+// the sheet: the mic step for her rung, and the fix after a wrong tap
+function sheetHTML(enter) {
+  const ph = S.phase, c = S.cur, from = ph === 'listen' || ph === 'heard' ? S.micFrom : ph;
+  const big = `cl-chit akshar ${c.rung === 5 ? 'sy' : ''}`;
+  const done = () => (S.heard === 'right' ? `<span class="rs-ok">${A.ICX.check(30)}</span>` : `<span class="ey-m">${A.mitthu(56, 'glad')}</span>`);
+  const right = () => (ph === 'heard' ? done() : micHTML(ph === 'listen'));
+  let card;
+  if (ph === 'fix' || ph === 'fixed') card = fixHTML();
+  else if (ph === 'eyes') card = `<div class="ey">${av(S.who, 92, 'big', A.kidEyes)}</div>`;
+  else if (ph === 'tell' || ph === 'open') card = `<div class="cl">${av(S.who, 50)}<div class="cl-chit q">${A.ICX.ear(46)}</div><button class="cl-spk" onclick="G.hear()" aria-label="फिर सुनो">${A.IC.spk(30)}</button></div>`;
+  else if (from === 'call') card = `<div class="cl"><div class="cl-who">${av(other(S.who), 34)}<span class="cl-eyes">${av(S.who, 24, '', A.kidEyes)}</span></div><div class="${big} ${ph === 'call' && S.heard ? 'again' : ''}">${c.letter}</div>${right()}</div>`;
+  else if (from === 'ready' || from === 'flash') {
+    const show = (ph === 'flash' && S.flashOn) || ph === 'heard';
+    const mic = ph === 'heard' ? done() : ph === 'flash' ? micHTML(true, true) : `<span class="rs-wait">${A.ICX.wait(30)}</span>`;
+    card = `<div class="cl"><div class="${big} ${show ? 'flash' : 'q'}">${show ? c.letter : '?'}</div>${mic}</div>`;
+  }
+  else card = `<div class="cl"><div class="${big} ${S.heard && ph !== 'heard' && ph !== 'listen' ? 'again' : ''}">${c.letter}</div>${right()}</div>`;
+  return `<div class="rs ${enter ? 'enter' : ''}">${mitthuLine()}<div class="rs-read">${card}</div></div>`;
+}
+function fixHTML() {
+  const c = S.cur, done = S.phase === 'fixed';
+  return `<div class="fx">${S.fixPair.map((t, i) => { const ok = t === c.letter; return `<button class="fx-card ${c.rung === 5 ? 'sy' : ''} ${ok ? (done || S.fixHint ? 'right' : '') : (S.fixHint ? 'dim' : 'was')}" data-fix="${ok ? 'right' : 'wrong'}" ${done ? 'tabindex="-1"' : `onclick="G.fix(${i})"`}>${t}${ok && done ? `<span class="fx-ok">${A.ICX.check(18)}</span>` : ''}</button>`; }).join('')}</div>`;
+}
+function bannerHTML(p) {
+  const pl = D.PLAYERS[p], n = S.turns[p];
+  const dots = Array.from({ length: D.TURNS }, (_, i) => `<i class="${i < n - 1 ? (S.results[p][i] === 'won' ? 'w' : 'l') : i === n - 1 ? 'now' : ''}"></i>`).join('');
+  return `<div class="bn"><div class="bn-card" style="--pc:${pl.color};--pcd:${pl.dark}">${av(p, 62)}<div><div class="bn-t">${esc(nameOf(p))} की बारी</div><div class="bn-dots">${dots}</div>${n >= D.TURNS ? '<div class="bn-s">आखिरी बारी</div>' : ''}</div></div></div>`;
+}
+function endCard() {
+  const a = S.cards.p1.length, b = S.cards.p2.length, win = a === b ? null : a > b ? 'p1' : 'p2';
+  const head = win ? `<div class="ce-head">${av(win, 76, 'big')}<div class="ce-title">${esc(nameOf(win))} की जीत!</div></div>`
+    : `<div class="ce-head"><div class="ce-two">${av('p1', 56)}${av('p2', 56)}</div><div class="ce-title">बराबर!</div></div>`;
+  const evLine = e => (e.kind === 'set' ? `<div class="ce-line set">${e.line}<span>${e.letters.map(x => `<b>${x}</b>`).join('')}</span></div>` : `<div class="ce-line">${esc(e.line)}</div>`);
+  const row = p => `<div class="ce-player" style="--pc:${D.PLAYERS[p].color}"><div class="ce-who">${av(p, 28)}<b>${esc(nameOf(p))}</b><span class="ce-n">${S.cards[p].length}</span></div><div class="ce-items">${S.cards[p].map(l => `<button class="ce-card-l ${l.length > 1 && S.log.some(e => e.letter === l && e.rung === 5) ? 'sy' : ''}" onclick="G.sayText('${l}')">${l}</button>`).join('') || '<span class="ce-none">—</span>'}</div>${(S.events[p] || []).filter(e => e.line).map(evLine).join('')}</div>`;
+  const conf = win ? `<div class="conf">${Array.from({ length: 14 }, (_, i) => `<i style="--i:${i};--c:${['#12809B', '#6B4FA0', '#2E9E5B', '#E07B39', '#D46A8C'][i % 5]}"></i>`).join('')}</div>` : '';
+  return `<div class="ce-card">${conf}${head}${row('p1')}${row('p2')}<div class="ce-btns"><button class="ce-btn soft" onclick="G.toStart()" aria-label="शुरू में जाओ">${A.ICX.home(26)}</button><button class="ce-btn go grow" id="btnAgain" onclick="G.again()">${A.ICX.replay(24)} फिर खेलो</button></div></div>`;
+}
+function confirmCard() {
+  return `<div class="ce-card sm"><div class="ce-title sm">खेल रोकें?</div><div class="ce-btns"><button class="ce-btn soft grow" onclick="G.endNo()">नहीं</button><button class="ce-btn go grow" id="btnEndYes" onclick="G.endYes()">हाँ, रोको</button></div></div>`;
+}
+// setup is for the grown-up: two names and one play button. A saved child shows how many letters she is sure of.
+const typedName = p => { const el = $(p === 'p1' ? 'name1' : 'name2'); return ((el ? el.value : S.names[p]) || '').trim(); };
+function infoFor(p) {
+  const n = typedName(p);
+  if (!n || (p === 'p2' && n === typedName('p1'))) return '<span class="kp-pill">मेहमान</span>';
+  const k = KIDS[n]; return k ? `पक्के अक्षर: <b>${sureOf(k).length}</b>` : '';
+}
+function heroArt() {
+  const fly = [['म', 46, 30], ['म', 92, 116], ['भ', 20, 92], ['म', 244, 26], ['न', 214, 116], ['म', 280, 88]];
+  return `<div class="ks-heroin"><i class="hero-ring"></i><div class="hero-top">${A.lattu(88, 'h')}</div><i class="hero-shadow"></i>${fly.map(([t, x, y], i) => `<span class="hero-tile" style="left:${x}px;top:${y}px;--r:${(i % 2 ? 1 : -1) * (5 + i * 2)}deg">${t}</span>`).join('')}</div>`;
+}
+function startHTML() {
+  const field = (p, id, ph) => `<div class="kp" style="--pc:${D.PLAYERS[p].color};--pcd:${D.PLAYERS[p].dark}"><label class="kp-name">${av(p, 34)}<input id="${id}" maxlength="12" placeholder="${ph}" value="${esc(S.names[p])}" autocomplete="off" oninput="G.typed()"></label><div class="kp-info" id="info-${p}">${infoFor(p)}</div></div>`;
+  return `<div class="ks"><div class="ks-hero">${heroArt()}</div>
+    <div class="ks-head"><span class="ks-m">${A.mitthu(56, 'glad')}</span><div class="grow"><div class="ks-title">घूमता लट्टू</div><div class="ks-sub">पढ़ो · घुमाओ · पकड़ो</div></div><button class="ks-spk" id="btnRules" onclick="G.rules()" aria-label="कैसे खेलें, सुनो">${A.IC.spk(24)}</button></div>
+    ${field('p1', 'name1', 'पहले बच्चे का नाम')}${field('p2', 'name2', 'दूसरे बच्चे का नाम')}
+    <button class="ks-go" id="btnStart" onclick="G.start()">${A.ICX.play(24)} खेलो</button></div>`;
+}
+
+/* ===================== reviewer panel ===================== */
+const SETNAME = s => (s === '0' ? 'Set 0' : 'Set ' + s);
+function kidStatus(k) {
+  if (k.done) return 'Passed R5: the app moves her to Word-level games.';
+  const here = k.rounds.slice(k.since), r = here[here.length - 1];
+  const bits = [];
+  if (k.rung <= 2) bits.push('fast lane: a perfect round (5/5, no wrong taps) moves her up straight away');
+  if (r && r.pass) bits.push(`last round passed (day ${r.day}): one more pass on another day moves her up${k.rung === 3 && !k.sets.includes('D') ? ', but R4 waits for Set D' : ''}`);
+  else if (r && r.wins <= 2) bits.push(`last round had ${r.wins} wins: one more round with 2 or fewer steps her back`);
+  else bits.push('needs two passes (4 of 5) in a row, on two different days');
+  if (k.gate) bits.push('ready for R4, waiting for Set D');
+  return bits.join(' · ');
+}
+function kidBox(p) {
+  const chip = (on, label, fn, cls) => `<button class="st-chip ${cls || ''} ${on ? 'on' : ''}" onclick="${fn}">${label}</button>`;
+  const name = S.screen === 'game' ? nameOf(p) : (typedName(p) || D.PLAYERS[p].fallback);
+  const guest = S.screen === 'game' ? S.guest[p] : (!typedName(p) || (p === 'p2' && typedName(p) === typedName('p1')));
+  if (guest) { const g = S.kid[p] && S.kid[p].guest ? S.kid[p] : null; return `<div class="st-box"><div class="st-rung"><span class="deva">${esc(name)}</span> · guest</div><div class="st-note">Plays R1 (letters from Sets 0, A, B) with the speed adjusting${g ? ` (now ×${g.speed.toFixed(2)})` : ''}. Nothing is saved; listening stays on the phone.</div></div>`; }
+  const k = kidFor(p);
+  if (!k) return `<div class="st-box"><div class="st-rung"><span class="deva">${esc(name)}</span> · new child</div><div class="st-note">Starts at R1 with Sets 0, A and B open. ${chip(false, 'set up now', `G.setRung('${p}',1)`)}</div></div>`;
+  const R = D.RUNGS[k.rung], open = openLetters(k), sure = sureOf(k);
+  const rungs = [1, 2, 3, 4, 5].map(r => chip(k.rung === r, 'R' + r, `G.setRung('${p}',${r})`)).join('');
+  const sets = D.SET_ORDER.map(s => chip(k.sets.includes(s), s, `G.openTo('${p}','${s}')`)).join('') + chip(false, 'make open letters sure', `G.makeSure('${p}')`, 'warn');
+  const rounds = k.rounds.slice(-6).map((r, i, arr) => `<span class="${r.pass ? 'g' : r.wins <= 2 ? 'w' : ''}">d${r.day} R${r.rung} ${r.wins}/5${r.after !== r.rung ? ` → R${r.after}` : ''}</span>`).join(' · ') || '—';
+  const deck = S.screen === 'game' ? S.decks[p].map((d, i) => `<span class="deva ${i < S.turns[p] ? 'm' : ''}">${d.letter}</span> ${d.why}`).join(' · ') : buildDeckPreview(k);
+  const letters = open.map(l => { const c = classOf(k, l); return `<span class="lt-${c} deva">${l}</span>`; }).join(' ');
+  return `<div class="st-box"><div class="st-rung"><span class="deva">${esc(name)}</span> · R${k.rung} ${R.en} <span class="deva">(${R.hi})</span> · speed ×${k.speed.toFixed(2)}</div>
+    <div class="st-chips">${rungs}</div><div class="st-chips">${sets}</div>
+    <div class="st-rmeta">sure of <b>${sure.length}</b> of ${open.length} open letters (next set at ${Math.ceil(open.length * D.OPEN_AT)}): ${letters}<br>rounds: ${rounds}<br>this game: ${deck}</div>
+    <div class="st-note">${kidStatus(k)}</div></div>`;
+}
+function buildDeckPreview() { return '(chosen when the game starts)'; }
+function renderSide() {
+  const side = $('side'); if (!side) return;
+  const chip = (on, label, fn, cls) => `<button class="st-chip ${cls || ''} ${on ? 'on' : ''}" onclick="${fn}">${label}</button>`;
+  const c = S.cur, inGame = S.screen === 'game' && c && S.phase !== 'end';
+  const micTxt = e => { const m = e.mic; if (m.by === 'mitthu') return 'Mitthu read it'; const who = m.by === 'friend' ? 'friend' : 'self'; return `${who}: ${m.results.map(r => (r === 'variant' ? 'right (home sound)' : r)).join(', ') || '—'}${m.ms != null ? ` · ${(m.ms / 1000).toFixed(2)}s` : ''}`; };
+  const res = e => (e.result === 'won' ? 'won' : e.result === 'wrong' ? `tapped <span class="deva">${e.wrong.tile}</span> (${e.wrong.kind === 'sound' && e.rung !== 3 ? PROFILE.soundSeen : PROFILE[e.wrong.kind]})${e.fixed ? `, fixed ${e.fixed}` : ''}` : 'top stopped');
+  const avg = a => (a.length ? (a.reduce((x, y) => x + y, 0) / a.length / 1000).toFixed(2) + 's' : '—');
+  const log = S.log.slice(-10).map(e => `<tr><td>${e.n}</td><td class="deva">${esc(e.name)}</td><td>R${e.rung}</td><td><span class="deva">${e.letter}</span> ${e.why}</td><td>${micTxt(e)}</td><td>${e.caught}/${e.need}${e.escaped ? ` · ${e.escaped} got away` : ''}</td><td class="${e.result === 'won' ? 'g' : 'w'}">${res(e)}</td><td>${avg(e.catches)}</td><td>×${e.speed.toFixed(2)}</td></tr>`).join('');
+  const R = inGame ? c.R : null;
+  side.innerHTML = `
+    <div class="st-label">day (the two-day rule needs real days; here you move the clock)</div><div class="st-chips"><span class="st-chip on">Day ${S.day}</span>${chip(false, 'next day →', 'G.nextDay()')}${chip(false, 'forget all saved children', 'G.resetKids()', 'warn')}</div>
+    <div class="st-label">game</div><div class="st-chips">${chip(false, 'new game, same names', 'G.again()')}${chip(false, 'stop (not counted)', 'G.endAsk()')}${chip(S.screen === 'start', 'setup screen', 'G.toStart()')}</div>
+    <div class="st-label">children (rung and sets can be changed here for review; children never see rungs)</div>
+    ${kidBox('p1')}${kidBox('p2')}
+    <div class="st-label">simulate the mic (on-device ASR, checks only the expected letter)</div><div class="st-chips">${chip(S.asr === 'scripted', 'scripted mix', "G.asr('scripted')", 'warn')}${chip(S.asr === 'always', 'always right', "G.asr('always')", 'warn')}${chip(S.asr === 'other', 'says another letter', "G.asr('other')", 'warn')}${chip(S.asr === 'unheard', "can't hear", "G.asr('unheard')", 'warn')}${chip(S.asr === 'home', 'home sound (ब for व)', "G.asr('home')", 'warn')}</div>
+    ${inGame ? `<div class="st-box"><div class="st-rung">Now: turn ${c.n} of ${2 * D.TURNS} · <span class="deva">${esc(nameOf(c.who))}</span> · R${c.rung} ${R.en}</div>
+      <div class="st-rmeta">letter <span class="deva">${c.letter}</span> (${c.why}) · catch ${R.need} · hers thrown ${R.targets}, others ${R.decoys} · one every ${(R.every / c.speed / 1000).toFixed(2)}s · stays ${(R.stays / c.speed / 1000).toFixed(2)}s · at most ${R.max} on the ground · speed ×${c.speed.toFixed(2)}<br>phase=${S.phase} · caught ${S.caught}/${c.need} · thrown ${S.thrown}/${S.total} · got away ${S.escaped} · mic ${c.mic.by || '—'} ${c.mic.results.join(', ')}</div></div>` : ''}
+    <div class="st-box"><div class="st-rung">What the phone records, every turn</div>
+      ${log ? `<table class="st-log"><tr><th>#</th><th>child</th><th>rung</th><th>letter</th><th>mic</th><th>caught</th><th>ended</th><th>avg catch</th><th>speed</th></tr>${log}</table>` : '<div class="st-note">No turns yet.</div>'}</div>
+    <div class="st-note"><b>Rungs.</b> R1 sees and hears it, echoes Mitthu; each catch says the letter · R2 reads the card first, no sound until she tries · R3 covers her eyes while her friend reads (only letters the friend has met, else Mitthu), Mitthu repeats it, catches from "?" · R4 card flashes 1 s, the mic opens by itself and times her, no replay, mostly look- and sound-alikes plus her past mix-ups · R5 letters with matras.<br>
+    <b>Moving.</b> Pass = 4 of 5. Up = two passes in a row on two different days (fast lane at R1–R2: 5/5 with no wrong taps). Back one rung after two rounds in a row with 2 or fewer. R4 needs Set D. Passing R5 leaves the level. Next set opens at 80% sure. Speed: two wins in a row +10%, a loss −10%, within ±20%.<br>
+    <b>On a laptop:</b> drag the wooden bead away from the top (or tap it). Prototype voice = the browser's Hindi voice; the mic is simulated.</div>`;
+}
+
+/* ===================== phone fitting, hooks, start ===================== */
+function fit() {
+  const small = window.innerWidth < 560 || /[?&]phone=1/.test(location.search);
+  document.body.classList.toggle('phone', small);
+  const sc = $('screen'), bz = document.querySelector('.bezel');
+  if (small) { const s = Math.min(window.innerWidth / W, window.innerHeight / 720); sc.style.transform = `scale(${s})`; bz.style.width = (W * s) + 'px'; bz.style.height = (720 * s) + 'px'; }
+  else { sc.style.transform = ''; bz.style.width = ''; bz.style.height = ''; }
+}
+window.KT = {
+  state: () => S, phase: () => S.phase, kids: () => KIDS, kid: p => S.kid[p], spoken: () => SPOKEN.slice(),
+  start: (a, b) => { S.names = { p1: a || '', p2: b || '' }; startGame(); },
+  hold: on => { S.hold = !!on; if (!on && S.held) { const f = S.held; S.held = null; f(); } },
+  go: () => { const f = S.held; S.held = null; if (f) f(); },
+  ground: () => ground.filter(t => !t.dead).map(t => t.text),
+  tapRight: () => { const t = ground.find(x => !x.dead && x.target); if (!t) return false; tapTile(t); return true; },
+  tapWrong: () => { const t = ground.find(x => !x.dead && !x.target); if (!t) return false; tapTile(t); return true; },
+  timeUp: () => { if (S.phase === 'catch') endTurn('time'); },
+  bot: list => { S.bot = list.slice(); },
+  fixRight: () => G.fix(S.fixPair.indexOf(S.cur.letter)),
+  fixWrong: () => G.fix(S.fixPair.findIndex(t => t !== S.cur.letter)),
+  stream: () => stream && { seq: stream.seq.slice(), every: stream.every / K, stays: stream.stays / K, max: stream.max, i: stream.i },
+  decoys: () => decoysFor(S.cur),
+  deckFor: p => buildDeck(p),
+  sure: (p, l) => isSure(S.kid[p].letters[l]),
+  lib: { openLetters, eligible, related, kindOf, partnersOf, EDGES, isSure, classOf, sureOf, newKid },
+  handle: () => HANDLE0,
+};
+const scr = $('screen');
+scr.addEventListener('pointerdown', onDown); scr.addEventListener('pointermove', onMove); scr.addEventListener('pointerup', onUp);
+scr.addEventListener('pointercancel', () => { drag = null; if (S.phase === 'pull') drawString(HANDLE0); });
+window.addEventListener('resize', fit);
+fit(); render();
+})();
+
+</script>
+</body>
+</html>
