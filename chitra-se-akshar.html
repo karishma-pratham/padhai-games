@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>चित्र से अक्षर</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap">
+<style>
+/* PadhAI Practice Framework tokens (no yellow) + चित्र से अक्षर */
+:root {
+  --ink:#16323C; --ink-soft:#546D79; --ink-muted:#7E949C;
+  --teal-600:#12809B; --teal-700:#0B6076; --teal-100:#E3F1F5;
+  --green-600:#1E9E4A; --green-700:#136B33; --green-100:#E4F4E8;
+  --stage:#12191C; --stage-chip:#1D272C; --bezel:#0A1013; --bezel-edge:#26343A;
+  --stage-ink:#DCE6EA; --stage-ink-soft:#A7B8BF; --stage-ink-faint:#7E949C;
+  --mud-ink:#3B2A12; --mud-soft:#6E5332; --wood:#8A5A3B; --wood-dark:#6E4429;
+  --board:#2E4A3D; --board-dark:#253D32; --chalk:#F4F1E8; --chalk-soft:#C9D6CC;
+  --paper:#FFFDF6;
+  --font-ui:'Baloo 2', system-ui, sans-serif;
+  --font-deva:'Noto Sans Devanagari','Devanagari Sangam MN', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+* { box-sizing:border-box; }
+html, body { margin:0; padding:0; background:var(--stage); }
+body { font-family:var(--font-ui); color:var(--stage-ink); }
+button { font:inherit; color:inherit; border:none; background:none; padding:0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+
+@keyframes cs-pop { 0% { transform:scale(.6); opacity:0; } 70% { transform:scale(1.06); opacity:1; } 100% { transform:scale(1); } }
+@keyframes cs-shake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-6px); } 75% { transform:translateX(6px); } }
+@keyframes cs-bars { 0%,100% { transform:scaleY(.3); } 50% { transform:scaleY(1); } }
+@keyframes cs-hint { 0%,100% { opacity:.25; } 50% { opacity:.95; } }
+@keyframes cs-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
+
+/* ---------- reviewer stage ---------- */
+.stage { min-height:100vh; padding:24px 28px 60px; display:flex; flex-direction:column; gap:18px; align-items:center; }
+.st-head { width:100%; max-width:1080px; display:flex; flex-direction:column; gap:6px; }
+.st-title { font-size:20px; font-weight:700; color:var(--stage-ink); }
+.st-title span { color:var(--stage-ink-faint); font-weight:600; }
+.st-meta { font-size:12px; font-family:var(--font-mono); color:var(--stage-ink-faint); line-height:1.5; }
+.st-body { display:flex; gap:28px; align-items:flex-start; justify-content:center; flex-wrap:wrap; width:100%; max-width:1080px; }
+.st-side { width:420px; max-width:100%; display:flex; flex-direction:column; gap:12px; }
+.st-label { font-size:11px; font-family:var(--font-mono); color:var(--stage-ink-faint); margin-bottom:-4px; }
+.st-chips { display:flex; gap:7px; flex-wrap:wrap; }
+.st-chip { min-width:40px; height:36px; padding:0 11px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; background:var(--stage-chip); color:var(--stage-ink-soft); }
+.st-chip.on { background:var(--teal-600); color:#fff; }
+.st-chip.outline { border:1px dashed #5E7A84; }
+.st-rung { font-size:13px; color:var(--stage-ink-soft); font-weight:600; line-height:1.5; }
+.st-rmeta { font-family:var(--font-mono); font-size:11px; color:var(--stage-ink-faint); line-height:1.6; word-break:break-word; }
+.st-note { font-size:12px; color:var(--stage-ink-faint); line-height:1.6; }
+.st-note b { color:var(--stage-ink-soft); }
+.st-box { border:1px dashed #33434A; background:#182126; border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
+.st-log { width:100%; border-collapse:collapse; font-size:11px; font-family:var(--font-mono); color:var(--stage-ink-soft); }
+.st-log td, .st-log th { padding:3px 4px; border-bottom:1px solid #26343A; text-align:left; vertical-align:top; }
+.st-log th { color:var(--stage-ink-faint); font-weight:600; }
+.st-log .deva { font-family:var(--font-deva); font-size:12px; }
+.st-log .g { color:#7FD49A; } .st-log .w { color:#D9B8A0; }
+
+/* ---------- phone ---------- */
+.bezel { width:384px; padding:12px; border-radius:40px; background:var(--bezel); border:2px solid var(--bezel-edge); flex:none; }
+.status { height:24px; display:flex; align-items:center; justify-content:space-between; padding:0 12px 3px; font-size:11px; font-weight:600; color:#B7C6CC; }
+.home-bar { height:20px; display:flex; align-items:center; justify-content:center; padding-top:4px; }
+.home-bar i { width:118px; height:5px; border-radius:999px; background:var(--bezel-edge); }
+.screen { width:360px; height:720px; border-radius:28px; overflow:hidden; background:#E6CC9C; position:relative; color:var(--mud-ink); user-select:none; -webkit-user-select:none; transform-origin:top left; }
+body.phone .stage { padding:0; min-height:100vh; gap:0; justify-content:center; background:#2A1E10; }
+body.phone .st-head, body.phone .st-side, body.phone .status, body.phone .home-bar { display:none; }
+body.phone .st-body { gap:0; max-width:none; }
+body.phone .bezel { padding:0; border:none; border-radius:0; background:none; width:auto; overflow:hidden; }
+body.phone .screen { border-radius:0; }
+
+/* ---------- game ---------- */
+.cs { position:absolute; inset:0; display:flex; flex-direction:column; background:#E6CC9C; font-family:var(--font-ui); }
+.ch { height:54px; flex:none; display:flex; align-items:center; gap:8px; padding:0 10px; background:linear-gradient(#EAD3A6, #E2C592); box-shadow:0 2px 0 rgba(120,85,40,.25); position:relative; z-index:2; }
+.ch-back { width:38px; height:38px; border-radius:50%; background:#FFF8EA; color:var(--mud-ink); display:flex; align-items:center; justify-content:center; flex:none; }
+.ch-chip { flex:1; min-width:0; height:42px; border-radius:21px; background:#FFF8EA; border:3px solid #E0CDA7; display:flex; align-items:center; gap:6px; padding:0 10px 0 4px; transition:background .25s, border-color .25s; }
+.ch-chip.on { background:var(--pc); border-color:var(--pcd); color:#fff; }
+.ch-av { width:32px; height:32px; border-radius:50%; background:#FFF8EA; border:2.5px solid var(--pc); display:inline-flex; align-items:flex-end; justify-content:center; overflow:hidden; flex:none; }
+.ch-av.big { width:40px; height:40px; }
+.ch-name { flex:1; min-width:0; font:700 16px var(--font-deva); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:inherit; }
+.ch-chip:not(.on) .ch-name { color:var(--mud-ink); }
+.ch-n { font:800 20px var(--font-ui); min-width:22px; text-align:center; }
+.cs-room { height:384px; flex:none; position:relative; }
+.cs-scene { display:block; }
+.cs-tap { cursor:pointer; }
+.cs-hint { animation:cs-hint 1.8s ease-in-out infinite; }
+
+/* the slate (wooden frame, chalkboard) */
+.cs-slate { flex:1; padding:8px 10px 10px; background:#E2C592; }
+.cs-board { height:100%; border-radius:14px; border:7px solid var(--wood); box-shadow:inset 0 0 0 2px var(--wood-dark), 0 3px 0 rgba(90,55,25,.35);
+  background:radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.06), transparent 60%), radial-gradient(ellipse at 80% 90%, rgba(255,255,255,.05), transparent 50%), var(--board);
+  padding:10px 12px; display:flex; flex-direction:column; justify-content:center; gap:9px; color:var(--chalk); font-family:var(--font-deva); }
+.sl-row { display:flex; align-items:center; gap:12px; }
+.sl-row.tight { gap:8px; }
+.sl-col { display:flex; flex-direction:column; gap:8px; flex:1; min-width:0; }
+.sl-txt { font:700 21px/1.35 var(--font-deva); color:var(--chalk); }
+.sl-txt.sm { font-size:18px; text-align:center; }
+.sl-hint { font:600 14px var(--font-deva); color:var(--chalk-soft); }
+.sl-hint.dark { color:var(--mud-soft); }
+.sl-pic { width:112px; height:112px; border-radius:14px; background:#E9EFEA; display:flex; align-items:center; justify-content:center; flex:none; box-shadow:inset 0 0 0 3px rgba(0,0,0,.08); }
+.sl-pic.sm { width:62px; height:62px; border-radius:10px; }
+.sl-mic { width:62px; height:62px; border-radius:50%; background:var(--teal-600); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 0 var(--teal-700); flex:none; animation:cs-pulse 1.6s ease-in-out infinite; }
+.sl-mic.on { background:var(--teal-700); box-shadow:none; animation:none; }
+.sl-mic .bars { display:flex; gap:3px; align-items:center; height:26px; }
+.sl-mic .bars i { width:4px; height:24px; background:#fff; border-radius:2px; animation:cs-bars .7s ease-in-out infinite; }
+.sl-mic .bars i:nth-child(2) { animation-delay:.12s; } .sl-mic .bars i:nth-child(3) { animation-delay:.24s; } .sl-mic .bars i:nth-child(4) { animation-delay:.36s; }
+.sl-hear { height:46px; padding:0 14px 0 10px; border-radius:23px; background:var(--chalk); color:var(--teal-700); display:inline-flex; align-items:center; gap:6px; font:700 15px var(--font-deva); flex:none; }
+.sl-slots { display:flex; gap:6px; flex:1; justify-content:center; }
+.sl-slot { min-width:54px; height:58px; padding:0 8px; border-radius:10px; border:2.5px solid var(--chalk-soft); display:inline-flex; align-items:center; justify-content:center; font:700 34px var(--font-deva); color:var(--chalk); }
+.sl-slot.q { border-style:dashed; color:var(--chalk-soft); }
+.sl-slot.fill { background:var(--pc); border-color:var(--pc); color:#fff; animation:cs-pop .35s ease-out; }
+.sl-tiles { display:flex; gap:12px; justify-content:center; }
+.sl-tile { width:78px; height:74px; border-radius:14px; background:var(--paper); color:#1C2B33; font:700 40px var(--font-deva); display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 0 #B8A88A; }
+.sl-tile.no { background:#8E9A92; color:#E4E8E5; box-shadow:none; text-decoration:line-through; text-decoration-thickness:3px; animation:cs-shake .35s ease; }
+.sl-tile.dim { opacity:.45; box-shadow:none; }
+.sl-word { text-align:center; font:700 44px/1.1 var(--font-deva); color:var(--chalk); animation:cs-pop .35s ease-out; }
+.sl-res { align-self:center; display:flex; align-items:center; gap:8px; font:700 17px/1.4 var(--font-deva); padding:6px 14px; border-radius:14px; text-align:center; }
+.sl-res.good { background:var(--green-100); color:var(--green-700); }
+.sl-res.soft { background:#E9EFEA; color:#2E4A3D; }
+.sl-res .ok, .ce-card h3 .ok { width:26px; height:26px; border-radius:50%; background:var(--green-600); display:inline-flex; align-items:center; justify-content:center; flex:none; }
+
+/* end / confirm card */
+.cs-over { position:absolute; inset:0; background:rgba(40,28,12,.45); display:flex; align-items:center; justify-content:center; padding:16px; z-index:5; }
+.ce-card { width:100%; background:var(--paper); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 8px 24px rgba(40,28,12,.35); animation:cs-pop .35s ease-out; font-family:var(--font-deva); color:#1C2B33; }
+.ce-card h3 { margin:0; font-size:21px; display:flex; align-items:center; gap:8px; color:var(--mud-ink); }
+.ce-player { border-radius:14px; background:#F6EFE0; padding:8px 10px; display:flex; flex-direction:column; gap:6px; border-left:5px solid var(--pc); }
+.ce-player b { font-size:18px; }
+.ce-n { font:800 26px var(--font-ui); color:var(--mud-ink); }
+.ce-items { display:flex; flex-wrap:wrap; gap:6px; }
+.ce-item { display:inline-flex; align-items:center; gap:6px; background:#fff; border-radius:12px; padding:3px 10px 3px 4px; box-shadow:0 2px 0 #D8C9AA; font:700 16px var(--font-deva); color:#1C2B33; }
+.ce-hint { font:600 14px var(--font-deva); color:var(--mud-soft); }
+.ce-btn { height:52px; padding:0 18px; border-radius:16px; font:700 18px var(--font-deva); display:inline-flex; align-items:center; justify-content:center; }
+.ce-btn.go { background:var(--teal-600); color:#fff; box-shadow:0 3px 0 var(--teal-700); }
+.ce-btn.soft { background:#EFE4CC; color:var(--mud-ink); box-shadow:0 3px 0 #C9AA72; }
+.grow { flex:1; }
+
+/* names screen */
+.ks { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 40%, #F2E0BC 0%, #E6CC9C 60%, #D3B27A 100%); display:flex; flex-direction:column; padding:18px 16px; gap:12px; color:var(--mud-ink); }
+.ks-top { display:flex; align-items:center; gap:10px; }
+.ks-title { font:800 34px/1.1 var(--font-deva); color:#5A3A12; }
+.ks-sub { font:700 15px var(--font-deva); color:var(--mud-soft); margin-top:4px; }
+.ks-label { font:700 15px var(--font-deva); color:var(--mud-soft); }
+.ks-row { display:flex; align-items:center; gap:10px; background:#FFF8EA; border-radius:16px; padding:8px 12px; border:3px solid var(--pc); box-shadow:0 3px 0 #C9AA72; }
+.ks-row input { flex:1; min-width:0; font:700 21px var(--font-deva); border:none; background:transparent; outline:none; color:var(--mud-ink); -webkit-user-select:text; user-select:text; padding:6px 0; }
+.ks-row input::placeholder { color:#B39B76; }
+.ks-rules { background:var(--paper); border-radius:14px; padding:10px 14px; font:600 15px/1.65 var(--font-deva); color:var(--mud-ink); box-shadow:0 2px 0 rgba(120,85,40,.2); }
+.ks-rules b { display:inline-flex; width:22px; height:22px; border-radius:50%; background:var(--teal-600); color:#fff; font:700 13px var(--font-ui); align-items:center; justify-content:center; margin-right:6px; }
+.ks-peek { flex:1; display:flex; align-items:center; justify-content:center; gap:14px; }
+.ks-peek span { width:92px; height:92px; border-radius:16px; background:#E9EFEA; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 0 #C9AA72; }
+.ks-go { height:58px; border-radius:18px; background:var(--teal-600); color:#fff; font:700 22px var(--font-deva); box-shadow:0 4px 0 var(--teal-700); }
+.sl-hear.round { width:46px; padding:0; justify-content:center; }
+
+/* levels, drag and drop */
+.ch-who { flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.05; }
+.ch-lv { font:700 11px var(--font-deva); opacity:.85; }
+.ch-chip:not(.on) .ch-lv { color:var(--pcd); }
+.ks-player { display:flex; flex-direction:column; gap:6px; }
+.ks-lv { display:flex; align-items:center; gap:6px; padding-left:4px; }
+.ks-lv span { font:600 13px var(--font-deva); color:var(--mud-soft); margin-right:2px; }
+.ks-lvc { height:36px; padding:0 14px; border-radius:18px; background:#FFF8EA; border:2px solid #D9C49B; font:700 15px var(--font-deva); color:var(--mud-ink); }
+.ks-lvc.on { background:var(--pc); border-color:var(--pc); color:#fff; }
+.sl-slot.given { border-color:transparent; color:var(--chalk-soft); }
+.sl-slot.hover { background:rgba(255,255,255,.18); border-color:var(--chalk); border-style:solid; }
+.sl-slots.words { flex-wrap:wrap; gap:5px; }
+.sl-slots.words .sl-slot { height:46px; min-width:44px; font-size:21px; padding:0 8px; }
+.sl-tiles { flex-wrap:wrap; }
+.sl-tiles.many { gap:9px; }
+.sl-tiles.many .sl-tile { width:60px; height:58px; font-size:32px; }
+.sl-tiles.words .sl-tile { width:auto; min-width:56px; height:48px; padding:0 12px; font-size:22px; }
+.sl-tile { touch-action:none; cursor:grab; }
+.sl-tile.used { visibility:hidden; }
+.sl-tile.lifted { opacity:.3; }
+.sl-tile.shake { animation:cs-shake .35s ease; background:#E3E7E4; }
+.sl-tile.ghost { position:absolute; z-index:20; pointer-events:none; box-shadow:0 10px 18px rgba(0,0,0,.35); transform:scale(1.08); }
+.sl-word.sm { font-size:26px; }
+.ce-lv { font:700 12px var(--font-deva); color:var(--pc); background:#fff; border-radius:9px; padding:1px 7px; margin-left:4px; }
+.sl-res.soft { font-size:15px; }
+
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="st-head">
+    <div class="st-title">चित्र से अक्षर · Picture to Letter <span>· rung 1: first akshar · one room, 6 things · two players</span></div>
+    <div class="st-meta">two children take turns · tap a thing in the room · say its name · pick the akshar it starts with · right = the thing is yours, wrong = it stays open · more things wins · 360×720dp · offline · prototype voice = the browser's Hindi voice, mic is simulated · on a phone the game fills the screen</div>
+  </div>
+  <div class="st-body">
+    <div class="bezel">
+      <div class="status"><div>9:41</div><div>▮▮▮ &nbsp;▭</div></div>
+      <div class="screen" id="screen"></div>
+      <div class="home-bar"><i></i></div>
+    </div>
+    <div class="st-side" id="side"></div>
+  </div>
+</div>
+<script>
+/* चित्र से अक्षर — one room, six everyday things, three levels.
+   Mitthu says the name (so मटका vs घड़ा is never the child's problem). Then, by level:
+   अक्षर: drag the first akshar into the first box (the rest is already there)
+   शब्द:  drag every akshar into place to build the word
+   वाक्य: Mitthu says a short sentence about the thing; drag the words into order
+   The wrong tiles are near-misses children really make, and each one is labelled for the mistake profiles. */
+(function (root) {
+const PLAYERS = {
+  p1: { color: '#12809B', dark: '#0B6076', light: '#E3F1F5', fallback: 'खिलाड़ी 1' },
+  p2: { color: '#6B4FA0', dark: '#4E3778', light: '#EEE8F6', fallback: 'खिलाड़ी 2' },
+};
+const LEVELS = { akshar: 'अक्षर', shabd: 'शब्द', vakya: 'वाक्य' };
+const OBJECTS = [
+  { key: 'pankha', word: 'पंखा', g: 'm', akshars: ['पं', 'खा'], firstNear: ['प', 'फ'], wordNear: ['प', 'ख'],
+    sentence: 'पंखा चल रहा है।', words: ['पंखा', 'चल', 'रहा', 'है।'], sentNear: ['रही'] },
+  { key: 'khidki', word: 'खिड़की', g: 'f', akshars: ['खि', 'ड़', 'की'], firstNear: ['खी', 'कि'], wordNear: ['खी', 'ड'],
+    sentence: 'खिड़की खुली है।', words: ['खिड़की', 'खुली', 'है।'], sentNear: ['खुला'] },
+  { key: 'matka', word: 'मटका', g: 'm', akshars: ['म', 'ट', 'का'], firstNear: ['भ', 'मा'], wordNear: ['भ', 'क'],
+    sentence: 'मटके में पानी है।', words: ['मटके', 'में', 'पानी', 'है।'], sentNear: ['मैं'] },
+  { key: 'kitab', word: 'किताब', g: 'f', akshars: ['कि', 'ता', 'ब'], firstNear: ['की', 'खि'], wordNear: ['की', 'त'],
+    sentence: 'मेरी किताब नई है।', words: ['मेरी', 'किताब', 'नई', 'है।'], sentNear: ['मेरा'] },
+  { key: 'tala', word: 'ताला', g: 'm', akshars: ['ता', 'ला'], firstNear: ['त', 'था'], wordNear: ['त', 'ल'],
+    sentence: 'ताला बंद है।', words: ['ताला', 'बंद', 'है।'], sentNear: ['तला'] },
+  { key: 'chatai', word: 'चटाई', g: 'f', akshars: ['च', 'टा', 'ई'], firstNear: ['छ', 'चा'], wordNear: ['छ', 'ट'],
+    sentence: 'चटाई पर बैठो।', words: ['चटाई', 'पर', 'बैठो।'], sentNear: ['बैठा'] },
+];
+// what each near-miss tile tells us
+const MISS = {
+  'प': 'anusvara dropped', 'फ': 'aspiration प/फ', 'ख': 'matra dropped', 'खी': 'matra length ि/ी', 'कि': 'aspiration क/ख', 'ड': 'nukta dropped ड/ड़',
+  'भ': 'look-alike म/भ', 'मा': 'extra matra', 'क': 'matra dropped', 'की': 'matra length ि/ी', 'खि': 'aspiration क/ख', 'त': 'matra dropped',
+  'था': 'aspiration त/थ', 'ल': 'matra dropped', 'छ': 'aspiration च/छ', 'चा': 'extra matra', 'ट': 'matra dropped',
+  'रही': 'word ending (gender)', 'खुला': 'word ending (gender)', 'मैं': 'look-alike में/मैं', 'मेरा': 'word ending (gender)', 'तला': 'matra dropped', 'बैठा': 'word ending',
+};
+const SLIPS = 2;   // the second wrong tile passes the turn
+root.KDATA = { PLAYERS, LEVELS, OBJECTS, MISS, SLIPS };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* कंचे — art. Everything is drawn as SVG strings so the file stays offline and small.
+   The scene is seen from above: a mud courtyard (आँगन), a ring scratched with a stick,
+   a jute mat (टाट-पट्टी) where each child sits, a few pebbles, neem leaves and chappals. */
+(function (root) {
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const svg = (vb, w, h, body, extra) => `<svg viewBox="${vb}" width="${w}" height="${h}" aria-hidden="true" ${extra || ''}>${body}</svg>`;
+
+// ---- ground: specks, pebbles, leaves, a twig (360 x 720) ----
+function ground(two) {
+  const r = rng(7);
+  let s = '';
+  for (let i = 0; i < 260; i++) {
+    const x = r() * 360, y = r() * 720, rr = 0.6 + r() * 1.8;
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(1)}" fill="${r() < .5 ? '#C9A873' : '#F6E7C6'}" opacity="${(0.35 + r() * 0.4).toFixed(2)}"/>`;
+  }
+  // tyre / foot marks: faint arcs
+  for (let i = 0; i < 9; i++) {
+    const x = 20 + r() * 320, y = 170 + r() * 380;
+    s += `<path d="M${x.toFixed(0)} ${y.toFixed(0)}q14 -6 28 0" stroke="#C7A570" stroke-width="2" fill="none" opacity=".35" stroke-linecap="round"/>`;
+  }
+  const pebble = (x, y, w, h, rot, c) => `<g transform="translate(${x} ${y}) rotate(${rot})"><ellipse cx="0" cy="2" rx="${w}" ry="${h}" fill="#8C6B3E" opacity=".25"/><ellipse cx="0" cy="0" rx="${w}" ry="${h}" fill="${c}"/><ellipse cx="${-w * .3}" cy="${-h * .35}" rx="${w * .35}" ry="${h * .25}" fill="#fff" opacity=".35"/></g>`;
+  s += pebble(334, 214, 7, 5, 20, '#A69A8B') + pebble(343, 236, 4, 3, -10, '#B8AE9F') + pebble(28, 470, 5, 4, 40, '#9E9384')
+    + pebble(330, 492, 6, 4, -30, '#ADA192') + pebble(46, 205, 3.5, 2.6, 0, '#B5AA9B') + pebble(316, 540, 3, 2.4, 0, '#A69A8B');
+  const leaf = (x, y, rot, c) => `<g transform="translate(${x} ${y}) rotate(${rot})"><path d="M0 0c6-7 18-8 26 0c-8 8-20 7-26 0z" fill="${c}"/><path d="M0 0h25" stroke="#4E7A2E" stroke-width="1" opacity=".7"/></g>`;
+  s += leaf(322, 300, -35, '#7FA650') + leaf(330, 318, 20, '#93B862') + leaf(18, 330, 60, '#86AD57') + leaf(300, 548, 160, '#9BBE6B');
+  s += `<path d="M30 520l26 -10 M44 515l6 -9" stroke="#8A6438" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>`;
+  // chappals: one pair near each mat
+  const chappal = (x, y, rot, c) => `<g transform="translate(${x} ${y}) rotate(${rot})"><g><path d="M0 0c-6 0-9 6-9 14s2 16 9 16 9-8 9-16-3-14-9-14z" fill="#5B4636"/><path d="M-6 6q6 6 12 0" stroke="${c}" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M0 2v6" stroke="${c}" stroke-width="2.4"/></g><g transform="translate(20 3) rotate(8)"><path d="M0 0c-6 0-9 6-9 14s2 16 9 16 9-8 9-16-3-14-9-14z" fill="#5B4636"/><path d="M-6 6q6 6 12 0" stroke="${c}" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M0 2v6" stroke="${c}" stroke-width="2.4"/></g></g>`;
+  s += chappal(306, 520, 200, '#12809B');
+  if (two) s += chappal(54, 200, 20, '#6B4FA0');
+  return svg('0 0 360 720', 360, 720, s, 'class="kc-ground-svg"');
+}
+
+// the tree's shadow (neem), in the top-left corner; it grows as the sun goes down
+function treeShadow() {
+  const r = rng(11);
+  let s = '';
+  for (let i = 0; i < 30; i++) {
+    const a = r() * Math.PI * 2, d = r() * 46;
+    s += `<circle cx="${(90 + Math.cos(a) * d).toFixed(0)}" cy="${(80 + Math.sin(a) * d * .85).toFixed(0)}" r="${(14 + r() * 16).toFixed(0)}"/>`;
+  }
+  return svg('0 0 180 160', 180, 160, `<defs><filter id="tsb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.2"/></filter></defs><g fill="#4A3414" filter="url(#tsb)">${s}</g>`);
+}
+
+// ring scratched with a stick: a slightly wobbly double line
+function ring(cx, cy, R) {
+  const r = rng(3);
+  const pts = (rad, n) => { let d = ''; for (let i = 0; i <= n; i++) { const a = i / n * Math.PI * 2, j = rad + (r() - .5) * 3.2; d += `${i ? 'L' : 'M'}${(cx + Math.cos(a) * j).toFixed(1)} ${(cy + Math.sin(a) * j).toFixed(1)}`; } return d + 'Z'; };
+  return svg('0 0 360 720', 360, 720,
+    `<circle cx="${cx}" cy="${cy}" r="${R - 2}" fill="#D9BB8A" opacity=".45"/>`
+    + `<path d="${pts(R, 90)}" stroke="#8E6A3C" stroke-width="3.4" fill="none" stroke-linejoin="round" opacity=".9"/>`
+    + `<path d="${pts(R + 3, 70)}" stroke="#F3E2BF" stroke-width="1.4" fill="none" opacity=".8"/>`,
+    'class="kc-ring-svg"');
+}
+// the line (लकीर) a child shoots from
+function line(x, y) {
+  return `<path d="M${x - 34} ${y + 1}q17 -3 34 0t34 0" stroke="#8E6A3C" stroke-width="3" fill="none" stroke-linecap="round" opacity=".75"/>`;
+}
+
+// ---- Mitthu, the pale elephant from the PadhAI design system ----
+const MITTHU_BODY = `<ellipse cx="13" cy="28" rx="12" ry="14" fill="#A9BCC4"/><ellipse cx="14" cy="28" rx="7.5" ry="9.5" fill="#F4C7CF"/><ellipse cx="51" cy="28" rx="12" ry="14" fill="#A9BCC4"/><ellipse cx="50" cy="28" rx="7.5" ry="9.5" fill="#F4C7CF"/><circle cx="32" cy="30" r="19" fill="#BFD0D6"/><path d="M27 38c0 8 1 14 5 17 3 2 7 0 6-3-2-1-4-3-4-6v-8z" fill="#BFD0D6"/><ellipse cx="20" cy="36" rx="3.2" ry="2" fill="#F4C7CF"/><ellipse cx="44" cy="36" rx="3.2" ry="2" fill="#F4C7CF"/>`;
+const MITTHU_EYES = {
+  idle: `<circle cx="25" cy="28" r="3.2" fill="#16323C"/><circle cx="39" cy="28" r="3.2" fill="#16323C"/><circle cx="26.2" cy="26.8" r="1.1" fill="#fff"/><circle cx="40.2" cy="26.8" r="1.1" fill="#fff"/>`,
+  glad: `<path d="M21.5 28.5q3.5-4 7 0M35.5 28.5q3.5-4 7 0" stroke="#16323C" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+  curious: `<circle cx="25" cy="27" r="3.4" fill="#16323C"/><circle cx="39" cy="27" r="3.4" fill="#16323C"/><circle cx="26.4" cy="25.6" r="1.2" fill="#fff"/><circle cx="40.4" cy="25.6" r="1.2" fill="#fff"/><path d="M34 19l8-2" stroke="#8FA7AF" stroke-width="2" stroke-linecap="round"/>`,
+};
+const mitthu = (size, mood) => svg('0 0 64 60', size, Math.round(size * 60 / 64), MITTHU_BODY + (MITTHU_EYES[mood] || MITTHU_EYES.idle));
+
+// ---- children (front view, for the mode cards and mats) ----
+function kid(who, size) {
+  const skin = who === 'p1' ? '#C98E62' : '#B97F55';
+  const hair = '#2B2622';
+  const face = `<circle cx="32" cy="30" r="17" fill="${skin}"/><circle cx="26" cy="31" r="2" fill="#16323C"/><circle cx="38" cy="31" r="2" fill="#16323C"/><path d="M26 38q6 5 12 0" stroke="#5A2E1E" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="21" cy="36" r="2.6" fill="#E59A86" opacity=".6"/><circle cx="43" cy="36" r="2.6" fill="#E59A86" opacity=".6"/>`;
+  const top = who === 'p1'
+    ? `<path d="M15 30c0-12 7-19 17-19s17 7 17 19c-3-6-9-10-17-10s-14 4-17 10z" fill="${hair}"/><path d="M15 28c-4 6-4 16 0 22" stroke="${hair}" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M49 28c4 6 4 16 0 22" stroke="${hair}" stroke-width="5" stroke-linecap="round" fill="none"/><circle cx="15" cy="51" r="3" fill="#E07B39"/><circle cx="49" cy="51" r="3" fill="#E07B39"/>`
+    : `<path d="M15 29c0-12 7-18 17-18s17 6 17 18c-4-5-6-8-9-8-3 2-10 3-15 1-4 1-7 4-10 7z" fill="${hair}"/>`;
+  const shirt = `<path d="M14 62c2-9 9-13 18-13s16 4 18 13z" fill="${who === 'p1' ? '#12809B' : '#6B4FA0'}"/>`;
+  return svg('0 0 64 62', size, Math.round(size * 62 / 64), shirt + face + top);
+}
+
+// ---- small things ----
+const IC = {
+  pouch: (s = 30) => svg('0 0 40 40', s, s, `<path d="M12 12c-6 6-8 12-8 16 0 6 6 9 16 9s16-3 16-9c0-4-2-10-8-16z" fill="#B98A4E"/><path d="M12 12h16" stroke="#7A5A2E" stroke-width="3" stroke-linecap="round"/><path d="M14 9c2 3 10 3 12 0" stroke="#E07B39" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M9 24c6 3 16 3 22 0" stroke="#A47740" stroke-width="1.6" fill="none"/><circle cx="16" cy="29" r="3" fill="#2F7FC1" opacity=".85"/><circle cx="24" cy="30" r="3" fill="#2E9E5B" opacity=".85"/>`),
+  chit: (s = 40) => svg('0 0 48 40', s, Math.round(s * 40 / 48), `<path d="M6 10l30-4 6 24-30 4z" fill="#FFFDF6" stroke="#D8CFB8" stroke-width="1.4"/><path d="M10 15l26-3M11 20l26-3M12 25l18-2.4" stroke="#B9D3E8" stroke-width="1.4"/><path d="M36 6l6 24" stroke="#E9E1CC" stroke-width="3"/>`),
+  mic: (s = 26) => svg('0 0 24 24', s, s, `<rect x="9" y="2.5" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>`),
+  spk: (s = 22) => svg('0 0 24 24', s, s, `<path d="M4 9h3l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>`),
+  back: (s = 22) => svg('0 0 24 24', s, s, `<path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`),
+  check: (s = 16) => svg('0 0 24 24', s, s, `<path d="M5 13l4.5 4.5L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`),
+  lock: (s = 18) => svg('0 0 24 24', s, s, `<path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#7E949C" stroke-width="2.4" fill="none"/><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="#9DB0B7"/>`),
+  book: (s = 20) => svg('0 0 24 24', s, s, `<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z" fill="#FFFDF6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 6v14" stroke="currentColor" stroke-width="1.6"/>`),
+  hand: (s = 40) => svg('0 0 40 40', s, s, `<path d="M15 6c2 0 3 1.5 3 3.5V19l1-1c1.5-1.4 3.6-1.2 4.6.4l.6 1 1-.6c1.6-.9 3.6-.2 4.3 1.5l.4 1 .8-.3c1.7-.5 3.4.7 3.4 2.5V31c0 4-3 7-7 7h-6c-2.5 0-4.6-1.3-5.9-3.4L9.4 26c-1-1.6-.4-3.7 1.3-4.5l1.3-.6V9.5C12 7.5 13 6 15 6z" fill="#F3D2B5" stroke="#8C5B3B" stroke-width="1.6" stroke-linejoin="round"/>`),
+};
+
+root.KART = { ground, treeShadow, ring, line, mitthu, kid, IC };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* चित्र से अक्षर — the room (front view, 360 x 384).
+   A village room: lime-washed wall with a गेरू band, mud floor, a fan, a window with bars and green shutters,
+   books on a shelf, a मटका on its stand, a blue tin trunk with a big lock, and a चटाई. */
+(function (root) {
+// each object: its drawing (in scene coordinates), the box you can tap, a halo, and where the owner's badge goes
+const OBJ = {
+  pankha: {
+    hit: [78, 16, 204, 60], halo: [180, 46, 102, 26], badge: [292, 40],
+    // the small picture shows the fan from a little lower, so the blades read as a fan
+    miniBox: [78, 6, 204, 96], miniDraw: () => `<line x1="180" y1="8" x2="180" y2="44" stroke="#6B7378" stroke-width="5"/><rect x="170" y="6" width="20" height="7" rx="2" fill="#7E888D"/><g transform="translate(180 54) scale(1 .55)">${[0, 120, 240].map(a => `<path d="M14 -12 L94 -18 Q104 0 94 18 L14 12 Z" fill="#A3AEB3" stroke="#7E888D" stroke-width="3" transform="rotate(${a + 30})"/>`).join('')}</g><ellipse cx="180" cy="52" rx="18" ry="11" fill="#8E989D"/><ellipse cx="180" cy="49" rx="18" ry="4" fill="#A9B4B9"/>`,
+    draw: (o) => `<line x1="180" y1="16" x2="180" y2="40" stroke="#6B7378" stroke-width="4"/><rect x="171" y="16" width="18" height="6" rx="2" fill="#7E888D"/>
+      <g transform="translate(180 47) scale(1 .3)"><g>${o.claimed ? '<animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="0.7s" repeatCount="indefinite"/>' : ''}
+        ${[0, 120, 240].map(a => `<path d="M14 -10 L94 -15 Q103 0 94 15 L14 10 Z" fill="#A3AEB3" stroke="#7E888D" stroke-width="3" transform="rotate(${a})"/>`).join('')}</g></g>
+      <ellipse cx="180" cy="45" rx="16" ry="8" fill="#8E989D"/><ellipse cx="180" cy="43" rx="16" ry="3" fill="#A9B4B9"/>`,
+  },
+  khidki: {
+    hit: [6, 78, 146, 150], halo: [78, 146, 72, 70], badge: [140, 84],
+    draw: (o, id) => `<g transform="translate(28 84)"><defs><clipPath id="cw${id}"><rect x="7" y="7" width="86" height="104"/></clipPath></defs>
+      <path d="M0 2 L-20 10 L-20 108 L0 116 Z" fill="#2E7D6F" stroke="#23665A" stroke-width="2"/><path d="M-6 22 L-16 25 V93 L-6 96" stroke="#23665A" stroke-width="1.6" fill="none"/>
+      <path d="M100 2 L120 10 L120 108 L100 116 Z" fill="#2E7D6F" stroke="#23665A" stroke-width="2"/><path d="M106 22 L116 25 V93 L106 96" stroke="#23665A" stroke-width="1.6" fill="none"/>
+      <rect x="0" y="0" width="100" height="118" rx="3" fill="#8A5A3B"/>
+      <g clip-path="url(#cw${id})"><rect x="7" y="7" width="86" height="104" fill="#A8D4E8"/><ellipse cx="30" cy="30" rx="16" ry="6" fill="#fff" opacity=".85"/><ellipse cx="72" cy="22" rx="12" ry="4" fill="#fff" opacity=".7"/>
+        <ellipse cx="50" cy="118" rx="64" ry="30" fill="#8CC07A"/><rect x="68" y="72" width="4" height="26" fill="#7A5A3A"/><circle cx="70" cy="68" r="15" fill="#5E9E52"/></g>
+      <g stroke="#4E5459" stroke-width="3" stroke-linecap="round">${[25, 43, 61, 79].map(x => `<line x1="${x}" y1="8" x2="${x}" y2="110"/>`).join('')}</g><line x1="7" y1="59" x2="93" y2="59" stroke="#4E5459" stroke-width="2"/>
+      <rect x="-6" y="116" width="112" height="8" rx="2" fill="#7A4A2B"/></g>`,
+  },
+  kitab: {
+    hit: [212, 92, 140, 82], halo: [280, 132, 70, 40], badge: [338, 98],
+    draw: () => `<g transform="translate(222 98)"><path d="M10 66 L10 80 L24 66 Z M104 66 L104 80 L90 66 Z" fill="#7A4A2B"/><rect x="0" y="58" width="116" height="8" rx="2" fill="#8A5A3B"/>
+      <rect x="8" y="10" width="15" height="48" rx="1.5" fill="#2F7FC1"/><rect x="24" y="16" width="13" height="42" rx="1.5" fill="#2E9E5B"/><rect x="38" y="6" width="17" height="52" rx="1.5" fill="#8C5BB5"/><rect x="56" y="20" width="12" height="38" rx="1.5" fill="#D46A8C"/>
+      <rect x="70" y="18" width="13" height="40" rx="1.5" fill="#3B8F8A" transform="rotate(12 76 58)"/><rect x="86" y="44" width="28" height="7" rx="1.5" fill="#E07B39"/><rect x="88" y="37" width="24" height="7" rx="1.5" fill="#2F7FC1"/>
+      <g stroke="#fff" stroke-width="1.4" opacity=".7"><line x1="10" y1="16" x2="21" y2="16"/><line x1="26" y1="22" x2="35" y2="22"/><line x1="40" y1="12" x2="53" y2="12"/><line x1="58" y1="26" x2="66" y2="26"/></g></g>`,
+  },
+  matka: {
+    hit: [138, 180, 80, 112], halo: [178, 236, 44, 56], badge: [222, 192],
+    draw: () => `<g transform="translate(148 186)"><path d="M14 96 L20 72 M46 96 L40 72" stroke="#5E686D" stroke-width="3" stroke-linecap="round"/><ellipse cx="30" cy="74" rx="19" ry="5" stroke="#5E686D" stroke-width="3" fill="none"/>
+      <ellipse cx="30" cy="52" rx="32" ry="30" fill="#B5652F"/><ellipse cx="40" cy="58" rx="18" ry="20" fill="#9E5426" opacity=".5"/><ellipse cx="17" cy="42" rx="7" ry="11" fill="#fff" opacity=".22"/>
+      <path d="M1 50 Q30 61 59 50" stroke="#EBD9C4" stroke-width="2.4" fill="none"/><g fill="#EBD9C4"><circle cx="12" cy="58" r="1.8"/><circle cx="22" cy="61" r="1.8"/><circle cx="32" cy="62" r="1.8"/><circle cx="42" cy="61" r="1.8"/><circle cx="51" cy="58" r="1.8"/></g>
+      <path d="M18 26 Q30 30 42 26 L40 18 Q30 21 20 18 Z" fill="#A55A28"/><ellipse cx="30" cy="18" rx="13" ry="4" fill="#8E4A20"/><ellipse cx="30" cy="15" rx="15" ry="4" fill="#A9B4B9"/></g>`,
+  },
+  tala: {
+    hit: [250, 238, 68, 80], halo: [284, 278, 36, 42], badge: [322, 248],
+    draw: (o) => `<g transform="translate(266 250)"><rect x="10" y="-10" width="16" height="28" rx="2" fill="#5E686D"/>
+      <path d="M5 30 V16 Q18 0 31 16 V30" stroke="#6B757B" stroke-width="5" fill="none" ${o.claimed ? 'transform="translate(0 -7)"' : ''}/>
+      <rect x="0" y="26" width="36" height="32" rx="5" fill="#8A959B"/><rect x="4" y="30" width="8" height="22" rx="3" fill="#fff" opacity=".25"/><circle cx="18" cy="40" r="3.6" fill="#3A4448"/><rect x="16.6" y="41" width="2.8" height="8" fill="#3A4448"/></g>`,
+  },
+  chatai: {
+    hit: [8, 304, 170, 64], halo: [93, 336, 86, 32], badge: [176, 314],
+    draw: () => `<g transform="translate(18 312)"><path d="M18 0 H150 L136 46 H0 Z" fill="#C9A066" stroke="#A57E48" stroke-width="2"/>
+      ${[[9, '#2E9E5B'], [18, '#8C5BB5'], [27, '#2F7FC1'], [36, '#2E9E5B']].map(([y, c]) => `<line x1="${18 - y * 18 / 46}" y1="${y}" x2="${150 - y * 14 / 46}" y2="${y}" stroke="${c}" stroke-width="3"/>`).join('')}
+      <g stroke="#A57E48" stroke-width="1" opacity=".6">${[30, 50, 70, 90, 110, 130].map(x => `<line x1="${x}" y1="0" x2="${x - 16}" y2="46"/>`).join('')}</g>
+      <g stroke="#A57E48" stroke-width="1.4">${[6, 14, 22, 30, 38].map(y => `<line x1="${18 - y * 18 / 46}" y1="${y}" x2="${18 - y * 18 / 46 - 6}" y2="${y + 1}"/>`).join('')}</g></g>`,
+  },
+};
+// the trunk under the lock is part of the room, not something to tap
+const TRUNK = `<g transform="translate(222 232)"><rect x="-2" y="8" width="124" height="16" rx="3" fill="#35617C"/><rect x="0" y="18" width="120" height="66" rx="4" fill="#3F6E8C"/>
+  <rect x="0" y="44" width="120" height="4" fill="#2C5469"/><rect x="0" y="18" width="8" height="66" fill="#2C5469"/><rect x="112" y="18" width="8" height="66" fill="#2C5469"/>
+  <rect x="-6" y="40" width="6" height="14" rx="2" fill="#2C5469"/><rect x="120" y="40" width="6" height="14" rx="2" fill="#2C5469"/></g>`;
+function room() {
+  let s = `<rect width="360" height="384" fill="#D9E6DF"/><rect width="360" height="16" fill="#EDE6D8"/><line x1="0" y1="16" x2="360" y2="16" stroke="#C9B89A" stroke-width="2"/>
+    <g fill="#CBDCD3" opacity=".7"><ellipse cx="200" cy="80" rx="30" ry="12"/><ellipse cx="320" cy="200" rx="22" ry="9"/><ellipse cx="160" cy="180" rx="18" ry="7"/></g>
+    <rect y="226" width="360" height="40" fill="#C08457"/><line x1="0" y1="226" x2="360" y2="226" stroke="#A86B42" stroke-width="2"/>
+    <rect y="266" width="360" height="118" fill="#CFAF85"/><line x1="0" y1="266" x2="360" y2="266" stroke="#B08E62" stroke-width="2"/>
+    <g fill="#B99A70" opacity=".6"><circle cx="60" cy="290" r="2"/><circle cx="210" cy="350" r="2.4"/><circle cx="300" cy="360" r="1.8"/><circle cx="120" cy="372" r="2"/><circle cx="250" cy="300" r="1.6"/></g>
+    <path d="M200 330 l14 6 l10 -3" stroke="#B08E62" stroke-width="1.4" fill="none"/>`;
+  s += `<g transform="translate(176 120)"><rect x="-1" y="-6" width="2" height="8" fill="#7A5A3A"/><rect x="-16" y="0" width="32" height="40" rx="2" fill="#F4EFE6" stroke="#B9A88A"/><rect x="-12" y="4" width="24" height="14" fill="#9CC3D5"/><g stroke="#B9A88A" stroke-width="1"><line x1="-11" y1="24" x2="11" y2="24"/><line x1="-11" y1="29" x2="11" y2="29"/><line x1="-11" y1="34" x2="6" y2="34"/></g></g>`;
+  return s + TRUNK;
+}
+// whole scene: room + halos (claimed / to pick / selected) + objects + owner badges
+function scene(st, P, kid) {
+  let s = room();
+  for (const k in OBJ) {
+    const o = OBJ[k], own = st.owner[k], [cx, cy, rx, ry] = o.halo;
+    if (own) s += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${P[own].color}" fill-opacity=".16" stroke="${P[own].color}" stroke-width="3" stroke-dasharray="7 6"/>`;
+    else if (st.sel === k) s += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#fff" fill-opacity=".35" stroke="${P[st.turn].color}" stroke-width="3.5"/>`;
+    else if (st.pick) s += `<ellipse class="cs-hint" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="#fff" stroke-width="2.6" stroke-dasharray="6 6"/>`;
+  }
+  for (const k in OBJ) s += `<g class="cs-obj" data-obj="${k}">${OBJ[k].draw({ claimed: !!st.owner[k] }, k)}</g>`;
+  for (const k in OBJ) {
+    const own = st.owner[k]; if (!own) continue;
+    const [bx, by] = OBJ[k].badge;
+    s += `<g><circle cx="${bx}" cy="${by}" r="16" fill="#fff" stroke="${P[own].color}" stroke-width="3"/>${kid(own, 26).replace('<svg ', `<svg x="${bx - 13}" y="${by - 14}" `)}</g>`;
+  }
+  // tap areas on top
+  for (const k in OBJ) { const [x, y, w, h] = OBJ[k].hit; s += `<rect class="cs-tap" data-obj="${k}" x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent" onclick="G.pickObj('${k}')"/>`; }
+  return `<svg class="cs-scene" viewBox="0 0 360 384" width="360" height="384" aria-label="कमरा">${s}</svg>`;
+}
+// one object on its own (for the slate)
+function mini(k, size) {
+  const o = OBJ[k], [x, y, w, h] = o.miniBox || o.hit, pad = 4;
+  const room = k === 'tala' ? TRUNK : '';
+  const body = o.miniDraw ? o.miniDraw() : o.draw({ claimed: false }, k + 'm');
+  return `<svg viewBox="${x - pad} ${y - pad} ${w + 2 * pad} ${h + 2 * pad}" width="${size}" height="${Math.round(size * (h + 2 * pad) / (w + 2 * pad))}" aria-hidden="true">${room}${body}</svg>`;
+}
+root.KSCENE = { scene, mini, OBJ };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* चित्र से अक्षर — two players, one room, six things, each child at her own level.
+   On your turn: tap a thing. Mitthu says its name. Drag the pieces into the boxes:
+   अक्षर: the first akshar · शब्द: every akshar · वाक्य: the words of a short sentence Mitthu says.
+   Done right: the thing is yours. Two wrong tiles: it stays open and the turn passes.
+   When all six are taken, whoever has more wins. */
+(function () {
+'use strict';
+const D = window.KDATA, A = window.KART, SC = window.KSCENE;
+const $ = id => document.getElementById(id);
+const FAST = /[?&]fast=1/.test(location.search);
+const SHOTS = /[?&]shots=1/.test(location.search);
+const T = ms => (FAST ? 12 : ms);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ===================== voice: recorded clips first, the browser's Hindi voice otherwise ===================== */
+const CLIPS = window.BKAUDIO || {};
+const SPOKEN = window.KC_SPOKEN = [];
+let voice = null, audioToken = 0, busy = false;
+function pickVoice() { try { const vs = window.speechSynthesis.getVoices(); voice = vs.find(v => /^hi/i.test(v.lang)) || null; } catch (e) {} }
+if ('speechSynthesis' in window) { pickVoice(); try { window.speechSynthesis.onvoiceschanged = pickVoice; } catch (e) {} }
+const keyOf = t => String(t).normalize('NFC').replace(/\s+/g, ' ').trim();
+let player = null, playSeq = 0, unlocked = false, ttsPrimed = false;
+function getPlayer() { if (!player) { try { player = new Audio(); player.preload = 'auto'; } catch (e) { player = null; } } return player; }
+function unlockAudio() {
+  sfxInit();
+  if (!ttsPrimed && 'speechSynthesis' in window) { ttsPrimed = true; try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; window.speechSynthesis.speak(u); } catch (e) {} }
+  if (unlocked || !window.BKSILENT) return;
+  const a = getPlayer(); if (!a) return;
+  unlocked = true;
+  if (!a.paused) return;
+  try { a.src = window.BKSILENT; const pr = a.play(); if (pr && pr.catch) pr.catch(e => { if (e && e.name === 'NotAllowedError') unlocked = false; }); } catch (e) { unlocked = false; }
+}
+['pointerup', 'touchend', 'click', 'keydown'].forEach(ev => { try { window.addEventListener(ev, unlockAudio, { capture: true, passive: true }); } catch (e) {} });
+function stopAudio() {
+  audioToken++; busy = false;
+  try { if (player) { player.onended = null; player.onerror = null; player.pause(); } } catch (e) {}
+  try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+}
+function ttsPart(text, my, done) {
+  let fired = false;
+  const fin = () => { if (fired) return; fired = true; if (my === audioToken) done(); };
+  if (!('speechSynthesis' in window)) { setTimeout(fin, 250); return; }
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'hi-IN'; if (voice) u.voice = voice; u.rate = 0.85;
+    u.onend = fin; u.onerror = fin;
+    window.speechSynthesis.speak(u);
+    setTimeout(fin, 1200 + text.length * 140);
+  } catch (e) { setTimeout(fin, 250); }
+}
+function clipPart(src, text, my, done) {
+  const a = getPlayer();
+  if (!a) { ttsPart(text, my, done); return; }
+  const seq = ++playSeq; let fired = false, guard = 0;
+  const end = viaVoice => { if (fired || seq !== playSeq) return; fired = true; clearTimeout(guard); if (my !== audioToken) return; if (viaVoice) ttsPart(text, my, done); else done(); };
+  try {
+    a.onended = () => end(false); a.onerror = () => end(true); a.src = src;
+    const pr = a.play();
+    if (pr && pr.catch) pr.catch(e => { const n = e && e.name; if (n === 'AbortError') return; end(n !== 'NotAllowedError'); });
+    guard = setTimeout(() => end(false), 9000);
+  } catch (e) { setTimeout(() => end(false), 50); }
+}
+function say(text, onDone) {
+  stopAudio();
+  const my = audioToken;
+  const parts = (Array.isArray(text) ? text : [text]).map(t => (t == null ? '' : keyOf(t))).filter(Boolean);
+  parts.forEach(p => SPOKEN.push({ p, lv: S.lv, mode: S.mode, phase: S.phase }));
+  const fin = () => { if (my === audioToken) { busy = false; if (onDone) onDone(); } };
+  if (FAST || SHOTS || !parts.length) { setTimeout(fin, FAST || SHOTS ? 4 : 250); return; }
+  busy = true;
+  if (!parts.every(p => CLIPS[p])) { ttsPart(parts.join(' '), my, fin); return; }   // one voice per sentence
+  let i = 0;
+  const next = () => { if (my !== audioToken) return; if (i >= parts.length) { fin(); return; } const p = parts[i++]; clipPart(CLIPS[p], p, my, () => setTimeout(next, 110)); };
+  next();
+}
+// move on once at least `ms` has passed and the voice has finished (at most 7 s more)
+function afterSpeech(fn, ms) {
+  const g = S.gen, t0 = Date.now(), min = T(ms), cap = min + (FAST || SHOTS ? 0 : 7000);
+  let quietSince = 0;
+  const tick = () => {
+    if (g !== S.gen) return;
+    const t = Date.now();
+    if (busy) quietSince = 0; else if (!quietSince) quietSince = t;
+    if (t - t0 >= cap || (t - t0 >= min && quietSince && t - quietSince >= 250)) fn(); else setTimeout(tick, 60);
+  };
+  setTimeout(tick, Math.min(min, 60));
+}
+const PRAISE = ['शाबाश!', 'बहुत अच्छे!', 'बिल्कुल सही!'];
+let praiseN = 0;
+const praise = () => PRAISE[praiseN++ % PRAISE.length];
+
+/* ---------- marble clicks (Web Audio, very short) ---------- */
+let actx = null, lastClack = 0;
+function sfxInit() { try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) {} }
+function tone(f1, f2, dur, vol, type) {
+  if (!actx || FAST || SHOTS) return;
+  try {
+    const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'triangle'; o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dur + 0.02);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.04);
+  } catch (e) {}
+}
+function clack(v) { const n = performance.now(); if (n - lastClack < 35) return; lastClack = n; tone(2600 + Math.random() * 700, 1500, 0.045, Math.min(0.22, 0.04 + v * 0.2)); }
+const plop = () => { tone(520, 880, 0.12, 0.16, 'sine'); setTimeout(() => tone(880, 1320, 0.1, 0.12, 'sine'), 90); };
+
+
+/* ===================== state ===================== */
+const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } };
+const savedN = load('chitra_names', {}), savedL = load('chitra_levels', {});
+const S = {
+  screen: 'start', lv: 1, mode: 'two', gen: 0,
+  names: { p1: savedN.p1 || '', p2: savedN.p2 || '' },
+  level: { p1: savedL.p1 || 'akshar', p2: savedL.p2 || 'shabd' },
+  owner: {}, turn: 'p1', turnNo: 0, phase: 'idle', sel: null,
+  target: [], filled: [], fixed: [], tiles: [], used: [], slips: [], shake: null, msg: null,
+  log: [], confirmEnd: false, hold: false, held: null,
+};
+function bump() { S.gen++; }
+const nameOf = p => S.names[p] || D.PLAYERS[p].fallback;
+const other = p => (p === 'p1' ? 'p2' : 'p1');
+const obj = k => D.OBJECTS.find(o => o.key === k);
+const open = () => D.OBJECTS.filter(o => !S.owner[o.key]);
+const countOf = p => D.OBJECTS.filter(o => S.owner[o.key] === p).length;
+const hota = o => (o.g === 'f' ? 'होती' : 'होता');
+const khula = o => (o.g === 'f' ? 'खुली' : 'खुला');
+const kaa = o => (o.g === 'f' ? 'की' : 'का');
+const lvl = () => S.level[S.turn];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function local(e) { const r = $('screen').getBoundingClientRect(), s = r.width / 360 || 1; return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s }; }
+
+/* ===================== the turn ===================== */
+function startGame() {
+  bump(); stopAudio();
+  S.owner = {}; S.turn = 'p1'; S.turnNo = 0; S.log = []; S.confirmEnd = false; S.screen = 'game';
+  render(); startTurn();
+}
+function startTurn() {
+  S.phase = 'pick'; S.sel = null; S.msg = null; S.shake = null;
+  render();
+  say(S.turnNo < 2 ? `${nameOf(S.turn)}, कमरे में कोई चीज़ छुओ।` : `${nameOf(S.turn)} की बारी।`);
+}
+// what to say when the thing is picked (and on "फिर सुनो")
+function prompt(o) {
+  const l = lvl();
+  if (l === 'akshar') return [`यह ${o.word} है।`, `${o.word} किस अक्षर से शुरू ${hota(o)} है?`];
+  if (l === 'shabd') return [`यह ${o.word} है।`, `अक्षर जोड़कर ${o.word} बनाओ।`];
+  return [`यह ${o.word} है।`, 'सुनो:', o.sentence, 'यह वाक्य बनाओ।'];
+}
+const G = window.G = {};
+G.pickObj = k => {
+  if (S.screen !== 'game' || S.phase !== 'pick' || S.owner[k] || S.confirmEnd) return;
+  const o = obj(k), l = lvl();
+  S.sel = k; S.slips = []; S.shake = null; S.msg = null;
+  if (l === 'akshar') { S.target = o.akshars.slice(); S.fixed = o.akshars.map((_, i) => i > 0); S.tiles = shuffle([o.akshars[0], ...o.firstNear]); }
+  else if (l === 'shabd') { S.target = o.akshars.slice(); S.fixed = o.akshars.map(() => false); S.tiles = shuffle([...o.akshars, ...o.wordNear]); }
+  else { S.target = o.words.slice(); S.fixed = o.words.map(() => false); S.tiles = shuffle([...o.words, ...o.sentNear]); }
+  S.filled = S.target.map((t, i) => (S.fixed[i] ? t : null));
+  S.used = S.tiles.map(() => false);
+  S.phase = 'build'; render();
+  say(prompt(o));
+};
+G.hear = () => { if (S.phase === 'build') { S.replays = (S.replays || 0) + 1; say(prompt(obj(S.sel))); } };
+const nextEmpty = () => S.filled.findIndex(f => f == null);
+// put tile i into box `slot` (or the next empty box)
+function place(i, slot) {
+  if (S.phase !== 'build' || S.used[i]) return;
+  if (slot == null || S.filled[slot] != null) slot = nextEmpty();
+  if (slot < 0) return;
+  const t = S.tiles[i], want = S.target[slot], o = obj(S.sel);
+  if (t === want) {
+    S.filled[slot] = t; S.used[i] = true; S.shake = null; S.msg = null;
+    tone(700, 1000, 0.07, 0.08, 'sine');
+    if (nextEmpty() < 0) { done(true); return; }
+    render();
+    return;
+  }
+  const label = D.MISS[t] && !S.target.includes(t) ? D.MISS[t] : 'wrong place';
+  S.slips.push({ tile: t, slot, label });
+  S.shake = i;
+  tone(300, 200, 0.18, 0.08, 'sine');
+  if (S.slips.length >= D.SLIPS) { done(false); return; }
+  S.msg = { kind: 'soft', text: lvl() === 'vakya' ? `यहाँ "${t}" नहीं आएगा। एक और गलती पर बारी बदलेगी।` : `यहाँ ${t} नहीं आएगा। एक और गलती पर बारी बदलेगी।` };
+  render();
+  say(lvl() === 'vakya' ? ['यहाँ', t, 'नहीं आएगा।'] : [`नहीं, यह ${t} है।`]);
+}
+function done(ok) {
+  const o = obj(S.sel);
+  S.log.push({ turn: S.turnNo + 1, who: S.turn, level: lvl(), obj: o.key, word: o.word, ok, slips: S.slips.slice() });
+  if (ok) {
+    S.owner[o.key] = S.turn; S.phase = 'right'; plop(); render();
+    say([praise(), lvl() === 'vakya' ? o.sentence : lvl() === 'akshar' ? `${o.akshars[0]} से ${o.word}।` : `${o.word}।`, `${o.word} अब ${nameOf(S.turn)} ${kaa(o)}।`]);
+  } else {
+    S.phase = 'wrong'; render();
+    say(['दो गलती हो गईं।', `${o.word} अभी ${khula(o)} है।`, `अब ${nameOf(other(S.turn))} की बारी।`]);
+  }
+  if (S.hold) S.held = endTurn; else afterSpeech(endTurn, 1700);
+}
+function endTurn() {
+  if (S.screen !== 'game' || S.phase === 'end') return;
+  if (!open().length) { endGame(); return; }
+  S.turn = other(S.turn); S.turnNo++;
+  startTurn();
+}
+function endGame() {
+  bump(); S.confirmEnd = false; S.phase = 'end'; render();
+  const a = countOf('p1'), b = countOf('p2');
+  say(a === b ? ['खेल खत्म!', 'दोनों की चीज़ें बराबर!'] : ['खेल खत्म!', `${nameOf(a > b ? 'p1' : 'p2')} की चीज़ें सबसे ज़्यादा!`]);
+}
+G.endAsk = () => { if (S.screen === 'game' && S.phase !== 'end') { S.confirmEnd = true; render(); } };
+G.endNo = () => { S.confirmEnd = false; render(); };
+G.endYes = () => endGame();
+G.again = () => startGame();
+G.toStart = () => { bump(); stopAudio(); S.screen = 'start'; S.phase = 'idle'; render(); };
+G.setLevel = (p, l) => { const n1 = $('name1'), n2 = $('name2'); if (n1) S.names.p1 = n1.value; if (n2) S.names.p2 = n2.value; S.level[p] = l; render(); };
+G.start = () => {
+  const n1 = ($('name1') || {}).value || '', n2 = ($('name2') || {}).value || '';
+  S.names = { p1: n1.trim().slice(0, 12), p2: n2.trim().slice(0, 12) };
+  try { localStorage.setItem('chitra_names', JSON.stringify(S.names)); localStorage.setItem('chitra_levels', JSON.stringify(S.level)); } catch (e) {}
+  sfxInit(); startGame();
+};
+G.sayObj = (k, p) => { const o = obj(k); say(S.level[p] === 'vakya' ? o.sentence : o.word); };
+
+/* ===================== drag and drop (a tap also works: the tile goes to the next empty box) ===================== */
+let drag = null;
+function onDown(e) {
+  const tile = e.target.closest && e.target.closest('.sl-tile[data-tile]');
+  if (!tile || S.phase !== 'build') return;
+  const i = +tile.dataset.tile; if (S.used[i]) return;
+  e.preventDefault();
+  drag = { i, id: e.pointerId, x0: e.clientX, y0: e.clientY, el: tile, ghost: null };
+  try { tile.setPointerCapture(e.pointerId); } catch (err) {}
+}
+function slotAt(e) { const el = document.elementFromPoint(e.clientX, e.clientY); const s = el && el.closest && el.closest('.sl-slot[data-slot]'); return s ? +s.dataset.slot : null; }
+function onMove(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  if (!drag.ghost && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 6) {
+    const g = drag.el.cloneNode(true); g.classList.add('ghost'); g.removeAttribute('data-tile'); g.removeAttribute('id');
+    const cs = getComputedStyle(drag.el); g.style.width = cs.width; g.style.height = cs.height; g.style.fontSize = cs.fontSize; g.style.padding = cs.padding;
+    $('screen').appendChild(g); drag.ghost = g; drag.el.classList.add('lifted');
+  }
+  if (drag.ghost) {
+    const p = local(e); drag.ghost.style.left = (p.x - drag.ghost.offsetWidth / 2) + 'px'; drag.ghost.style.top = (p.y - drag.ghost.offsetHeight / 2) + 'px';
+    document.querySelectorAll('.sl-slot.hover').forEach(s => s.classList.remove('hover'));
+    const s = slotAt(e); if (s != null && S.filled[s] == null) { const el = document.querySelector(`.sl-slot[data-slot="${s}"]`); if (el) el.classList.add('hover'); }
+  }
+}
+function onUp(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const d = drag; drag = null;
+  if (d.ghost) { const s = slotAt(e); d.ghost.remove(); d.el.classList.remove('lifted'); if (s != null && S.filled[s] == null) place(d.i, s); else render(); }
+  else place(d.i, null);
+}
+
+/* ===================== screens ===================== */
+function render() {
+  const sc = $('screen');
+  if (S.screen === 'start') { sc.innerHTML = startHTML(); renderSide(); return; }
+  const st = { owner: S.owner, sel: S.sel, pick: S.phase === 'pick', turn: S.turn };
+  let h = `<div class="cs">${headHTML()}<div class="cs-room">${SC.scene(st, D.PLAYERS, A.kid)}</div><div class="cs-slate"><div class="cs-board">${slateHTML()}</div></div>`;
+  if (S.phase === 'end') h += `<div class="cs-over">${endCard()}</div>`;
+  if (S.confirmEnd) h += `<div class="cs-over">${confirmCard()}</div>`;
+  sc.innerHTML = h + '</div>';
+  renderSide();
+}
+function headHTML() {
+  const chip = p => { const pl = D.PLAYERS[p], on = S.turn === p && S.phase !== 'end'; return `<div class="ch-chip ${on ? 'on' : ''}" id="chip-${p}" style="--pc:${pl.color};--pcd:${pl.dark}"><span class="ch-av">${A.kid(p, 28)}</span><span class="ch-who"><span class="ch-name">${esc(nameOf(p))}</span><span class="ch-lv">${D.LEVELS[S.level[p]]}</span></span><b class="ch-n">${countOf(p)}</b></div>`; };
+  return `<div class="ch"><button class="ch-back" id="btnEnd" onclick="G.endAsk()" aria-label="खेल खत्म">${A.IC.back(20)}</button>${chip('p1')}${chip('p2')}</div>`;
+}
+function slotsHTML(final) {
+  const v = lvl() === 'vakya', who = D.PLAYERS[S.turn];
+  return `<div class="sl-slots ${v ? 'words' : ''}">${S.target.map((t, i) => {
+    const f = S.filled[i];
+    if (f != null && S.fixed[i]) return `<span class="sl-slot given">${f}</span>`;
+    if (f != null) return `<span class="sl-slot fill" style="--pc:${who.color}">${f}</span>`;
+    return `<span class="sl-slot q" data-slot="${i}" ${v ? `style="min-width:${Math.max(44, 14 + [...t].length * 12)}px"` : ''}>${final ? '' : '?'}</span>`;
+  }).join('')}</div>`;
+}
+function slateHTML() {
+  const ph = S.phase, o = S.sel ? obj(S.sel) : null, nm = esc(nameOf(S.turn)), l = lvl();
+  const replay = `<button class="sl-hear round" id="btnHear" onclick="G.hear()" aria-label="फिर सुनो">${A.IC.spk(22)}</button>`;
+  const pic = l === 'vakya' || !S.sel ? '' : `<div class="sl-pic sm">${SC.mini(S.sel, 52)}</div>`;
+  if (ph === 'pick') return `<div class="sl-row">${A.mitthu(66, 'glad')}<div class="sl-col"><div class="sl-txt">${nm}, कमरे में<br>कोई चीज़ छुओ</div><div class="sl-hint">${D.LEVELS[l]} · ${open().length} चीज़ें बाकी</div></div></div>`;
+  if (ph === 'build') {
+    const ask = l === 'akshar' ? `पहला अक्षर खींचकर डिब्बे में रखो` : l === 'shabd' ? 'अक्षर खींचकर शब्द बनाओ' : 'शब्द खींचकर वाक्य बनाओ';
+    const msg = S.msg ? `<div class="sl-res soft">${S.msg.text}</div>` : `<div class="sl-txt sm">${ask}</div>`;
+    return `<div class="sl-row tight">${pic}${slotsHTML()}${replay}</div>${msg}<div class="sl-tiles ${l === 'vakya' ? 'words' : ''} ${S.tiles.length > 3 ? 'many' : ''}">${S.tiles.map((t, i) => `<button class="sl-tile ${S.used[i] ? 'used' : ''} ${S.shake === i ? 'shake' : ''}" data-tile="${i}" aria-label="${t}">${t}</button>`).join('')}</div>`;
+  }
+  if (ph === 'right') return `<div class="sl-row tight">${pic}${slotsHTML(true)}</div><div class="sl-word ${l === 'vakya' ? 'sm' : ''}">${l === 'vakya' ? o.sentence : o.word}</div><div class="sl-res good"><span class="ok">${A.IC.check(16)}</span>शाबाश! ${o.word} अब ${nm} ${kaa(o)}</div>`;
+  if (ph === 'wrong') return `<div class="sl-row tight">${pic}${slotsHTML(true)}</div><div class="sl-res soft">दो गलती हो गईं। ${o.word} अभी ${khula(o)} है।<br>अब ${esc(nameOf(other(S.turn)))} की बारी</div>`;
+  if (ph === 'end') return `<div class="sl-row">${A.mitthu(66, 'glad')}<div class="sl-txt">खेल खत्म!</div></div>`;
+  return '';
+}
+function endCard() {
+  const a = countOf('p1'), b = countOf('p2'), win = a === b ? null : a > b ? 'p1' : 'p2';
+  const row = p => { const mine = D.OBJECTS.filter(o => S.owner[o.key] === p); return `<div class="ce-player" style="--pc:${D.PLAYERS[p].color}"><div class="sl-row tight"><span class="ch-av big">${A.kid(p, 34)}</span><b class="grow">${esc(nameOf(p))} <span class="ce-lv">${D.LEVELS[S.level[p]]}</span></b><span class="ce-n">${mine.length}</span></div><div class="ce-items">${mine.map(o => `<button class="ce-item" onclick="G.sayObj('${o.key}','${p}')">${SC.mini(o.key, 40)}<span>${o.word}</span></button>`).join('') || '<span class="sl-hint dark">इस बार कुछ नहीं, अगली बार!</span>'}</div></div>`; };
+  return `<div class="ce-card"><h3>${win ? `<span class="ok">${A.IC.check(16)}</span> ${esc(nameOf(win))} की चीज़ें सबसे ज़्यादा!` : 'बराबर! दोनों की चीज़ें बराबर'}</h3>${row('p1')}${row('p2')}<div class="ce-hint">चीज़ छूकर सुनो</div><div class="sl-row tight"><button class="ce-btn soft" onclick="G.toStart()">नए नाम</button><button class="ce-btn go grow" id="btnAgain" onclick="G.again()">फिर से खेलो</button></div></div>`;
+}
+function confirmCard() {
+  return `<div class="ce-card"><h3>खेल यहीं खत्म करें?</h3><div class="ce-hint">चीज़ें गिनेंगे, जिसकी ज़्यादा उसकी जीत।</div><div class="sl-row tight"><button class="ce-btn soft grow" onclick="G.endNo()">खेलते रहो</button><button class="ce-btn go grow" id="btnEndYes" onclick="G.endYes()">गिनो</button></div></div>`;
+}
+function startHTML() {
+  const field = (p, id, ph) => `<div class="ks-player" style="--pc:${D.PLAYERS[p].color}"><label class="ks-row"><span class="ch-av big">${A.kid(p, 34)}</span><input id="${id}" maxlength="12" placeholder="${ph}" value="${esc(S.names[p])}" autocomplete="off"></label><div class="ks-lv"><span>क्या बनाएगा?</span>${Object.keys(D.LEVELS).map(l => `<button class="ks-lvc ${S.level[p] === l ? 'on' : ''}" data-lv="${p}-${l}" onclick="G.setLevel('${p}','${l}')">${D.LEVELS[l]}</button>`).join('')}</div></div>`;
+  return `<div class="ks"><div class="ks-top"><div><div class="ks-title">चित्र से अक्षर</div><div class="ks-sub">चीज़ पहचानो, उसका नाम बनाओ</div></div><div style="margin-left:auto">${A.mitthu(60, 'glad')}</div></div>
+    <div class="ks-label">दोनों खिलाड़ियों के नाम लिखो</div>
+    ${field('p1', 'name1', 'पहला खिलाड़ी')}${field('p2', 'name2', 'दूसरा खिलाड़ी')}
+    <div class="ks-rules"><div><b>1</b> बारी-बारी से कमरे में कोई चीज़ छुओ।</div><div><b>2</b> मिट्ठू उसका नाम बताएगा।</div><div><b>3</b> टुकड़े खींचकर डिब्बों में रखो: पहला अक्षर, पूरा शब्द या वाक्य।</div><div><b>4</b> सही बना, तो चीज़ तुम्हारी। दो गलती पर बारी बदलेगी।</div></div>
+    <button class="ks-go" id="btnStart" onclick="G.start()">शुरू करो</button></div>`;
+}
+
+/* ===================== reviewer panel ===================== */
+function renderSide() {
+  const side = $('side'); if (!side) return;
+  const chip = (on, label, fn) => `<button class="st-chip ${on ? 'on' : ''}" onclick="${fn}">${label}</button>`;
+  const stat = p => { const L = S.log.filter(e => e.who === p); const sl = L.flatMap(e => e.slips.map(s => `${s.tile} in ${e.word} (${s.label})`)); return `${esc(nameOf(p))} [${S.level[p]}]: owns ${countOf(p)} · turns ${L.length} · built with no slip ${L.filter(e => e.ok && !e.slips.length).length} · slips: ${sl.join('; ') || '—'}`; };
+  const log = S.log.slice(-12).map(e => `<tr><td>${e.turn}</td><td class="deva">${esc(nameOf(e.who))}</td><td>${e.level}</td><td class="deva">${e.word}</td><td class="deva">${e.slips.map(s => s.tile).join(' ') || '—'}</td><td class="${e.ok ? 'g' : 'w'}">${e.ok ? 'built' : 'passed'}</td></tr>`).join('');
+  side.innerHTML = `
+    <div class="st-label">game</div><div class="st-chips">${chip(false, 'new game, same names', 'G.again()')}${chip(false, 'end & count', 'G.endAsk()')}${chip(S.screen === 'start', 'names screen', 'G.toStart()')}</div>
+    <div class="st-box"><div class="st-rung">One room, 6 things · 2 players · each child at her own level</div>
+      <div class="st-note">Tap a thing; Mitthu says its name (no naming by voice, so मटका or घड़ा never matters). Then drag the pieces into the boxes, or tap a piece to drop it in the next box. <b>अक्षर</b>: the first akshar (the rest is given) · <b>शब्द</b>: every akshar · <b>वाक्य</b>: Mitthu says a short sentence and the child puts its words in order. The wrong pieces are near-misses (प for पं, खी for खि, मैं for में…). Two wrong pieces pass the turn and the thing stays open. The word or sentence is never written before it is built.</div>
+      ${S.screen === 'game' ? `<div class="st-rmeta">turn ${S.turnNo + 1} · ${esc(nameOf(S.turn))} (${lvl()}) · phase=${S.phase} · open=${open().length}${S.sel ? ` · building ${S.target.join(' + ')} · slips ${S.slips.length}/${D.SLIPS}` : ''}</div>` : ''}</div>
+    <div class="st-box"><div class="st-rung">What the phone records</div><div class="st-rmeta">${stat('p1')}<br>${stat('p2')}</div>
+      ${log ? `<table class="st-log"><tr><th>#</th><th>child</th><th>level</th><th>thing</th><th>wrong pieces</th><th>result</th></tr>${log}</table>` : '<div class="st-note">No turns yet.</div>'}</div>`;
+}
+
+/* ===================== phone fitting, hooks, start ===================== */
+function fit() {
+  const small = window.innerWidth < 560 || /[?&]phone=1/.test(location.search);
+  document.body.classList.toggle('phone', small);
+  const sc = $('screen'), bz = document.querySelector('.bezel');
+  if (small) { const s = Math.min(window.innerWidth / 360, window.innerHeight / 720); sc.style.transform = `scale(${s})`; bz.style.width = (360 * s) + 'px'; bz.style.height = (720 * s) + 'px'; }
+  else { sc.style.transform = ''; bz.style.width = ''; bz.style.height = ''; }
+}
+window.KT = {
+  state: () => S, phase: () => S.phase, busy: () => busy, spoken: () => SPOKEN.slice(),
+  start: (a, b, la, lb) => { S.names = { p1: a || '', p2: b || '' }; if (la) S.level = { p1: la, p2: lb || la }; startGame(); },
+  open: () => open().map(o => o.key),
+  // index of the right tile for the next empty box, or a wrong one
+  nextRight: () => { const s = nextEmpty(); return s < 0 ? -1 : S.tiles.findIndex((t, i) => !S.used[i] && t === S.target[s]); },
+  nextWrong: () => { const s = nextEmpty(); return s < 0 ? -1 : S.tiles.findIndex((t, i) => !S.used[i] && t !== S.target[s]); },
+  place: (i, slot) => place(i, slot),
+  hold: on => { S.hold = !!on; if (!on && S.held) { const f = S.held; S.held = null; f(); } },
+};
+const scr = $('screen');
+scr.addEventListener('pointerdown', onDown); scr.addEventListener('pointermove', onMove); scr.addEventListener('pointerup', onUp);
+scr.addEventListener('pointercancel', () => { if (drag && drag.ghost) drag.ghost.remove(); if (drag) drag.el.classList.remove('lifted'); drag = null; });
+window.addEventListener('resize', fit);
+fit(); render();
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>संख्या चक्र — आमने-सामने स्थानीय मान (PadhAI Plus प्रोटोटाइप)</title>
+<!-- PadhAI Plus · 2-player Sankhya Chakra (number circle) place-value game · visual prototype v0.1 (HINDI version — instructions in Hindi, all numbers stay as 0-9 numerals)
+     FACE-TO-FACE BOARD: the phone lies flat between two children. Player 1 sits at the bottom edge,
+     Player 2 at the top edge (their strip, panels and coin labels are turned to face them).
+     Flow per marble: knock it OUT of the ring (any order) → SAY IT (on-device speech, simulated) → it joins your bag.
+     When your bag has every piece → BUILD IT in the right order. Edit ONLY the CONTENT pack below.
+     Single self-contained file: no network, no CDN, no web fonts. -->
+<style>
+  :root{--rim:#6b3e1f;--ink:#2b1a0e;--p1:#1f7a4d;--p2:#b5462b;--bg:#fbf4e8;--gold:#e0a100}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#3d2414;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Devanagari","Mangal","Nirmala UI",sans-serif}
+  #game{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column}
+  .strip{flex:1 1 0;min-height:0;background:var(--bg);display:flex;flex-direction:column;gap:4px;padding:6px 10px;overflow:hidden;border:4px solid transparent;transition:border-color .2s, box-shadow .2s}
+  .strip.rot{transform:rotate(180deg)}
+  .strip.active[data-p="0"]{border-color:var(--p1);box-shadow:inset 0 0 18px rgba(31,122,77,.35)}
+  .strip.active[data-p="1"]{border-color:var(--p2);box-shadow:inset 0 0 18px rgba(181,70,43,.35)}
+  .srow{display:flex;align-items:center;gap:8px;min-height:0}
+  .pname{font-weight:700;font-size:16px}
+  [data-p="0"] .pname{color:var(--p1)} [data-p="1"] .pname{color:var(--p2)}
+  .badge{font-size:13px;font-weight:700;padding:3px 10px;border-radius:12px;background:#eee;color:#777}
+  .active .badge{color:#fff;animation:glow 1.2s ease-in-out infinite alternate}
+  .active[data-p="0"] .badge{background:var(--p1)} .active[data-p="1"] .badge{background:var(--p2)}
+  @keyframes glow{from{opacity:.75}to{opacity:1;transform:scale(1.06)}}
+  .sc{margin-left:auto;font-size:15px}.sc b{font-size:20px}
+  .tgt{font-size:14px;opacity:.85}.tgt b{font-size:18px;opacity:1}
+  .meta{margin-left:auto;font-size:12px;opacity:.75;white-space:nowrap}
+  .mini{border:0;border-radius:10px;background:#ffd84d;font-size:16px;min-width:40px;min-height:34px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+  .msg{font-size:14px;text-align:center;padding:3px 6px;border-radius:8px;min-height:24px;line-height:1.3}
+  .msg.good{background:#e4f4ea}.msg.bad{background:#fde8e1}.msg.info{background:#fff7d6}
+  .bagrow{display:flex;gap:5px;flex-wrap:wrap;align-items:center;flex:1;min-height:0;overflow:hidden}
+  .tile{min-width:40px;height:40px;border-radius:20px;border:3px solid #c9a46c;background:#fff8ec;font:inherit;font-size:17px;font-weight:600;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer}
+  .tile.need{border-color:var(--p1)}.tile.used{opacity:.25}
+  .slider{width:100%;height:30px;margin:0;accent-color:var(--rim);flex:0 0 auto}
+  .btn{white-space:nowrap;border:0;border-radius:14px;background:#fff;box-shadow:0 2px 0 rgba(0,0,0,.18);font:inherit;font-size:16px;padding:8px 14px;min-height:44px;cursor:pointer;color:var(--ink)}
+  .btn.primary{background:var(--p1);color:#fff}.btn.gold{background:var(--gold);color:#fff}.btn:disabled{opacity:.4}
+  .hidden{display:none!important}
+  #boardWrap{flex:0 0 auto;display:flex;justify-content:center;background:#5a3a1e}
+  canvas{display:block;touch-action:none}
+  /* Half-screen panels (say-it, build-it) open on the active player's side and face them */
+  .half{position:fixed;left:0;right:0;margin:0 auto;max-width:520px;height:50%;bottom:0;z-index:10;background:rgba(251,244,232,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 14px;overflow:hidden;border-top:5px solid var(--p1)}
+  .half.p2{bottom:auto;top:0;transform:rotate(180deg);border-top-color:var(--p2)}
+  .half .who{font-size:14px;opacity:.8}
+  .sayTop{display:flex;align-items:center;gap:14px}
+  .coinBig{width:76px;height:76px;border-radius:50%;background:#fffaf0;border:5px solid #a07b4c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+  .sayTop h2{margin:0;font-size:26px}
+  .micWrap{position:relative;width:118px;height:118px}
+  .ring{position:absolute;inset:14px;border-radius:50%;border:4px solid var(--p1);opacity:0}
+  .listening .ring{animation:pulse 1.4s ease-out infinite}.listening .ring.r2{animation-delay:.45s}.listening .ring.r3{animation-delay:.9s}
+  @keyframes pulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.7);opacity:0}}
+  #micBtn{position:absolute;inset:14px;border-radius:50%;border:0;background:var(--p1);color:#fff;font-size:40px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.25);touch-action:none;user-select:none;-webkit-user-select:none}
+  .listening #micBtn{background:#d23a2a}.checking #micBtn{background:#8a7a6a}
+  #wave{display:flex;gap:4px;justify-content:center;align-items:center;height:30px}
+  #wave i{display:block;width:5px;height:5px;border-radius:3px;background:var(--p1);transition:height .08s}
+  .spinner{width:18px;height:18px;border:3px solid #ccc;border-top-color:var(--p1);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #sayStatus{font-size:18px;font-weight:600;min-height:24px;text-align:center}
+  #sayStatus.ok{color:var(--p1)}#sayStatus.no{color:#c0562b}
+  .sayFoot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+  .chip{font-size:11px;padding:3px 8px;border-radius:10px;background:#efe6d6;color:#6b5a48;cursor:pointer;border:0}
+  .link{background:none;border:0;color:#6b5a48;text-decoration:underline;font:inherit;font-size:13px;cursor:pointer}
+  .ondevice{font-size:11px;opacity:.6}
+  .slots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .slot{min-width:56px;height:46px;border-radius:12px;border:2px dashed #b08a5a;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;padding:0 8px;color:#b08a5a;background:#fffdf8;cursor:pointer}
+  .slot.filled{border-style:solid;border-color:#8a5a2b;color:var(--ink)}.slot.reveal{border-color:var(--gold);background:#fff7d6;color:var(--ink)}
+  .shake{animation:sh .35s}@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  #buildMsg{font-size:15px;text-align:center;min-height:22px}
+  /* Split cards (start, round end) readable from both ends */
+  .split{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;max-width:520px;margin:0 auto;background:rgba(43,26,14,.6)}
+  .split .card{flex:1;margin:8px;border-radius:16px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px 14px;text-align:center;overflow:hidden}
+  .split .card.rot{transform:rotate(180deg)}
+  .card h2{margin:0;font-size:22px}.card p{margin:0;font-size:15px;line-height:1.4}
+  .together{background:#fff7d6;border-radius:12px;padding:8px;font-size:14px}
+  .lvlpick{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}.lvlpick .btn{font-size:14px;padding:6px 10px;min-height:40px}.lvlpick .btn.sel{outline:3px solid var(--p1)}
+  small.note{font-size:11px;opacity:.7}
+  /* Small phones (e.g. 360x640): tighter strips */
+  @media (max-height:720px){
+    .strip{gap:2px;padding:4px 8px;border-width:3px}
+    .slider{height:22px}.pname{font-size:15px}.sc b{font-size:17px}.tgt b{font-size:16px}
+    .mini{min-height:28px;min-width:36px;font-size:14px}
+    .msg{font-size:13px;min-height:20px;padding:2px 6px}
+    .tile{height:32px;min-width:32px;font-size:15px;border-width:2px}
+    .strip .btn.gold{min-height:34px;padding:4px 10px;font-size:14px}
+    .coinBig{width:60px;height:60px;font-size:22px}.micWrap{width:100px;height:100px}#micBtn{font-size:32px}
+    #sayStatus{font-size:16px}.half{gap:4px;padding:6px 10px}
+  }
+  /* place-value chart in the active player's strip */
+  .chart{display:flex;gap:6px;justify-content:center;align-items:stretch;flex:1;min-height:0}
+  .pcol{flex:1;max-width:96px;background:#fff;border:2px solid #d9c3a0;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px}
+  .pcol .ph{font-size:12px;font-weight:700;line-height:1.1}.pcol .ph small{display:block;font-weight:400;font-size:10px;opacity:.7}
+  .pcol .pd{display:flex;align-items:center;gap:2px}
+  .pcol button{border:0;border-radius:8px;background:#efe6d6;font-size:18px;width:30px;height:32px;cursor:pointer}
+  .pcol .dg{font-size:24px;font-weight:800;min-width:22px;text-align:center}
+  .pcol.rev{border-color:var(--gold);background:#fff7d6}
+  .chart{gap:4px}
+  @media (max-width:380px){ .pcol button{width:22px} .pcol .dg{min-width:18px} }
+  .tgt{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  @media (max-height:720px){ #game .strip .tgt, #game .strip .tgt b{font-size:15px} .strip .msg{font-size:12px;padding:2px 6px} .chartBtn{padding:3px 10px !important;font-size:14px !important;min-height:0 !important;height:30px} }
+  .chartBtn{padding:6px 14px !important;font-size:16px !important;white-space:nowrap}.ckslot{margin-left:auto}
+  .pcol{min-width:0}
+  .result{font-size:15px;text-align:center;flex:1;display:flex;align-items:center;justify-content:center;font-weight:600}
+  .coinBig.num{width:auto;min-width:90px;padding:0 14px;border-radius:40px}
+  @media (max-height:720px){ .pcol .ph{font-size:11px}.pcol .ph small{font-size:9px}.pcol button{width:26px;height:26px;font-size:15px}.pcol .dg{font-size:19px} }
+  /* v0.2: numeral headers, bigger small text for grade 3–5 */
+  @media (max-height:660px){ #ovStart .card > p:first-of-type{display:none} }
+  .pcol .ph .pn{display:block;font-size:24px;font-weight:900;line-height:1;color:#1b120a}
+  .pcol .ph small{display:block;font-size:12px;font-weight:700;opacity:.85}
+  @media (max-height:720px){ #ovStart .card p{font-size:12px !important;line-height:1.3 !important;margin:2px 0} #ovStart .card h2{margin:2px 0} .pcol .ph .pn{font-size:19px} .pcol .ph small{font-size:11px} .strip .msg{font-size:13px} }
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="strip rot" id="strip1" data-p="1"></div>
+  <div id="boardWrap"><canvas id="board"></canvas></div>
+  <div class="strip" id="strip0" data-p="0"></div>
+</div>
+
+<!-- Say it (opens on the active player's half) -->
+<div class="half hidden" id="ovSay">
+  <div class="who" id="sayWho"></div>
+  <div class="sayTop"><div class="coinBig" id="sayCoin"></div><h2 id="sayTitle">बोलो!</h2></div>
+  <div class="micWrap" id="micWrap"><div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div><button id="micBtn" aria-label="माइक दबाओ और बोलो">🎤</button></div>
+  <div id="wave"></div>
+  <div id="sayStatus">माइक दबाओ और बोलो</div>
+  <div class="sayFoot"><button class="link" id="skipLink">छोड़ो — बड़े पुष्टि करें</button><button class="chip" id="demoChip" title="डेमो">डेमो: टैप = ✓</button></div>
+  <div class="ondevice">🔒 आवाज़ इसी फ़ोन पर जाँची जाती है — बिना इंटरनेट</div>
+</div>
+<!-- Start: split card -->
+<div class="split" id="ovStart">
+  <div class="card rot" id="startTop"></div>
+  <div class="card" id="startBottom"></div>
+</div>
+<!-- Round / level end: split card -->
+<div class="split hidden" id="ovRound">
+  <div class="card rot" id="roundTop"></div>
+  <div class="card" id="roundBottom"></div>
+</div>
+
+<script>
+/* =====================================================================
+   CONTENT PACK — the content team edits ONLY this object.
+   - places: place-value names (English + Hindi term shown small underneath)
+   - levels: rings = how many places are on the ground (2 = Ones/Tens … 4 = up to Thousands)
+             marbles = marbles each player tosses per turn (max 9 keeps every digit 0–9)
+             rounds: {type:'compare'} → bigger number wins; {type:'target', target:N} → closest to N wins
+   - together: end-of-round "play together" prompts; {target} is replaced
+   - audio: HUMAN-RECORDED AUDIO PLUGS IN HERE ('line.<name>', 'num.<n>' for numbers …).
+     No file → the phone's English voice if present → otherwise silent (text stays on screen).
+   ===================================================================== */
+const CONTENT = {
+  meta: { id: 'sankhya-chakra-hi', version: '0.1-prototype-hi', lang: 'hi-IN' },
+  rules: {
+    winPoints: 2,                 // round winner bonus (both get it on a tie)
+    countPoints: [3, 1],          // chart right first time / right after the answer was shown
+    sayPoints: 1,
+    showHindiTerm: false
+  },
+  places: [
+    // label = shown on the rings and chart; small = optional second line (empty in the Hindi version)
+    { key:'O',  en:'इकाई',   hi:'', value:1 },
+    { key:'T',  en:'दहाई',   hi:'', value:10 },
+    { key:'H',  en:'सैकड़ा',  hi:'', value:100 },
+    { key:'Th', en:'हज़ार',   hi:'', value:1000 }
+  ],
+  lines: {
+    praise: 'शाबाश! सही है।',
+    retry: 'फिर से कोशिश करो।',
+    reveal: 'देखो! जवाब घेरों पर है।',
+    sayIt: 'संख्या बोलो:',
+    sayModel: 'सुनो:',
+    toss: 'पीछे खींचो। छोड़ो!',
+    count: 'गिनो। तालिका भरो। जाँचो दबाओ।',
+    turn: ' की बारी',
+    compare: 'सबसे बड़ी संख्या बनाओ!',
+    target: 'इसके सबसे पास पहुँचो:',
+    levelUp: 'नया स्तर!'
+  },
+  together: {
+    compare: 'साथ में खेलो: दोनों संख्याएँ पढ़ो। कौन-सी बड़ी है?',
+    target: 'साथ में खेलो: {target} के पास कौन था?'
+  },
+  audio: { /* HUMAN AUDIO goes here, e.g. 'line.praise': 'audio/praise.mp3' */ },
+  levels: [
+    { id: 1, name: 'इकाई और दहाई', rings: 2, marbles: 9,
+      instruction: 'अंदर का घेरा = 10। बाहर का घेरा = 1।',
+      rounds: [ {type:'compare'}, {type:'target', target:45}, {type:'compare'}, {type:'target', target:27}, {type:'compare'} ] },
+    { id: 2, name: 'सैकड़े तक', rings: 3, marbles: 9,
+      instruction: 'बीच में 100। फिर 10। फिर 1।',
+      rounds: [ {type:'compare'}, {type:'target', target:234}, {type:'compare'}, {type:'target', target:315}, {type:'compare'} ] },
+    { id: 3, name: 'हज़ार तक', rings: 4, marbles: 9,
+      instruction: 'बीच में 1000। फिर 100, 10, 1।',
+      rounds: [ {type:'compare'}, {type:'target', target:1302}, {type:'compare'}, {type:'target', target:2142}, {type:'compare'} ] }
+  ]
+};
+/* ======================= END CONTENT PACK ============================ */
+
+/* ---------- Telemetry stub (swap console for the app logger) ---------- */
+function log(event, data){ const e = Object.assign({event, t: Date.now(), game: CONTENT.meta.id}, data||{}); console.log('[telemetry]', JSON.stringify(e)); (window.__events = window.__events||[]).push(e); }
+
+/* =====================================================================
+   SPEECH RECOGNITION STUB — PLUG ON-DEVICE MODEL HERE
+   recogniseSpeech(expectedText, opts) -> Promise<{heard, correct, confidence}>
+   Replace the body with: open the mic, run the offline on-device model,
+   compare with expectedText, resolve the result. Call opts.onStage('listening')
+   while recording and opts.onStage('checking') while the model runs.
+   This prototype does NOT use the mic or the Web Speech API; it only simulates:
+     opts.force === true  → correct      (demo: tap the mic)
+     opts.force === false → try again    (demo: long-press the mic)
+     opts.force undefined → ~85% correct (demo chip set to "random")
+     opts.nearMiss        → what the demo 'mis-hears' (e.g. the words for a nearby number)
+   ===================================================================== */
+const SIM = { listenMs: 1500, checkMs: 700, randomCorrectRate: 0.85 };
+function recogniseSpeech(expectedText, opts = {}){
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  return (async () => {
+    // >>> PLUG ON-DEVICE MODEL HERE (start capture) <<<
+    opts.onStage && opts.onStage('listening'); await wait(SIM.listenMs);
+    // >>> PLUG ON-DEVICE MODEL HERE (run inference) <<<
+    opts.onStage && opts.onStage('checking'); await wait(SIM.checkMs);
+    const correct = opts.force === undefined ? Math.random() < SIM.randomCorrectRate : !!opts.force;
+    const heard = correct ? expectedText : (opts.nearMiss || nearMiss(expectedText));
+    return { heard, correct, confidence: correct ? +(0.82 + Math.random()*0.15).toFixed(2) : +(0.3 + Math.random()*0.25).toFixed(2) };
+  })();
+}
+function nearMiss(t){ // plausible mis-hearing for the demo only
+  const swaps = {b:'d',d:'b',p:'q',q:'p',m:'n',n:'m',c:'k',k:'c',a:'e',e:'a',i:'e',o:'u',u:'o'};
+  for (let i=0;i<t.length;i++){ const ch=t[i].toLowerCase(); if (swaps[ch]) return t.slice(0,i)+swaps[ch]+t.slice(i+1); }
+  return t + 's';
+}
+
+/* ---------- Audio out: human recording first, phone TTS second, never blocks ---------- */
+let voice = null;
+function pickVoice(){ try{ const vs = window.speechSynthesis ? speechSynthesis.getVoices() : []; voice = vs.find(v=>/^hi/i.test(v.lang)) || null; /* Hindi voice only; none = silent, text stays on screen */ }catch(e){ voice=null; } }
+if (window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function say(key, text){
+  try{
+    const file = CONTENT.audio[key];
+    if (file){ new Audio(file).play().catch(()=>{}); return; }      // HUMAN-RECORDED AUDIO PLUG-IN POINT
+    if (voice && window.speechSynthesis){ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.voice = voice; u.lang = voice.lang; u.rate = 0.85; speechSynthesis.speak(u); }
+  }catch(e){}   // no voice → silent; no beep
+}
+
+/* ---------- Number helpers ---------- */
+const ONES=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+function words(n){
+  if (n<20) return ONES[n];
+  if (n<100) return TENS[Math.floor(n/10)] + (n%10 ? '-'+ONES[n%10] : '');
+  if (n<1000){ const r=n%100; return ONES[Math.floor(n/100)]+' hundred'+(r?' and '+words(r):''); }
+  const r=n%1000; return words(Math.floor(n/1000))+' thousand'+(r ? (r<100?' and ':' ')+words(r) : '');
+}
+function expanded(n){ const parts=[]; String(n).split('').forEach((d,i,arr)=>{ if (d!=='0') parts.push(String(+d*10**(arr.length-1-i))); }); return parts.length ? parts.join(' + ') : '0'; }
+function placeWords(counts, places){ return places.slice().reverse().filter(p=>counts[p.key]).map(p=>`${counts[p.key]} ${counts[p.key]===1?p.en.replace(/s$/,''):p.en}`).join(' + ') || '0'; }
+function nearNumber(n){ const s=String(n).split(''); if (s.length>1 && s[s.length-1]!==s[s.length-2]){ const t=s[s.length-1]; s[s.length-1]=s[s.length-2]; s[s.length-2]=t; return +s.join(''); } return n+10; }
+
+/* ---------- State ---------- */
+const $ = id => document.getElementById(id);
+const rand = (a,b) => a + Math.random()*(b-a);
+const W=1000, WALL=20, C={x:500,y:500}, OUTER=360, MR=24;
+const BASE=[905, 95];
+const FRICTION=0.972, STOP=0.06, MAXV=34, BOUNCE=1.7;
+const COLORS=['#1f7a4d','#b5462b'];
+const RADII={2:[170,360], 3:[115,238,360], 4:[100,187,274,360]};   // inner → outer
+const G={ levelIdx:0, roundIdx:0, cur:0, state:'start', marbles:[], shooter:null, aim:null, tossesLeft:0, uid:0, fx:[], demoMode:'tap', reveal:false, count:null,
+  players:[ {name:'खिलाड़ी 1', score:0}, {name:'खिलाड़ी 2', score:0} ] };
+const level=()=>CONTENT.levels[G.levelIdx], round=()=>level().rounds[G.roundIdx], P=()=>G.players[G.cur];
+const places=()=>CONTENT.places.slice(0, level().rings);           // Ones … highest
+const radii=()=>RADII[level().rings];
+function ringOf(m){ const d=Math.hypot(m.x-C.x,m.y-C.y), R=radii(), pl=places(); for (let i=0;i<R.length;i++) if (d<=R[i]) return pl[pl.length-1-i]; return null; }
+function tally(){ const c={}; places().forEach(p=>c[p.key]=0); G.marbles.filter(m=>m.owner===G.cur).forEach(m=>{ const p=ringOf(m); if (p) c[p.key]++; }); return c; }
+function numberOf(c){ return places().reduce((s,p)=>s+c[p.key]*p.value,0); }
+function taskText(){ const r=round(); return r.type==='target' ? `🎯 ${CONTENT.lines.target} ${r.target}` : CONTENT.lines.compare; }
+
+/* ---------- Player strips (Player 2's strip is rotated 180° to face them) ---------- */
+const S=[{},{}];
+[0,1].forEach(i=>{
+  const el=$('strip'+i);
+  el.innerHTML=`
+    <input type="range" class="slider" min="0" max="1000" value="500" aria-label="कंचा खिसकाओ">
+    <div class="srow"><span class="pname">${G.players[i].name}</span><span class="badge">रुको</span><span class="sc">⭐ <b>0</b></span></div>
+    <div class="srow"><span class="tgt"><b></b></span><button class="mini" aria-label="सुनो">🔊</button><span class="meta"></span><span class="ckslot"></span></div>
+    <div class="msg info"></div>
+    <div class="area" style="flex:1;min-height:0;display:flex"></div>`;
+  S[i]={el, slider:el.querySelector('.slider'), badge:el.querySelector('.badge'), score:el.querySelector('.sc b'), tgt:el.querySelector('.tgt b'),
+        spk:el.querySelector('.mini'), meta:el.querySelector('.meta'), ck:el.querySelector('.ckslot'), msg:el.querySelector('.msg'), area:el.querySelector('.area')};
+  S[i].spk.onclick=()=>{ const t=`${level().instruction} ${taskText()}.`; setMsg(i,'info',t); say('instr.'+level().id,t); };
+  S[i].slider.addEventListener('input',()=>{ if (G.state==='aim' && G.cur===i) G.shooter.x=sliderX(i); });
+});
+function sliderX(i){ const v=+S[i].slider.value; return i===0 ? 120+v*0.76 : 880-v*0.76; }
+function setMsg(i,kind,text){ const m=S[i].msg; m.className='msg '+kind; m.textContent=text; }
+
+/* ---------- Round flow ---------- */
+function startRound(){
+  G.marbles=[]; G.fx=[]; G.reveal=false; G.players.forEach(p=>{ p.number=null; p.counts=null; p.done=false; });
+  G.cur=G.roundIdx%2; G.first=G.cur;
+  log('round_start',{level:level().id, round:G.roundIdx+1, type:round().type, target:round().target||null, starts:G.cur+1});
+  [0,1].forEach(i=>setMsg(i,'info',''));
+  startTurn();
+}
+function startTurn(){
+  G.marbles=[]; G.reveal=false; G.tossesLeft=level().marbles; G.count=null;
+  say('line.turn', P().name+CONTENT.lines.turn+'. '+taskText());
+  readyToAim();
+}
+function readyToAim(msg){
+  G.shooter={id:++G.uid, x:sliderX(G.cur), y:BASE[G.cur], vx:0, vy:0, r:MR, m:1, owner:G.cur};
+  G.state='aim';
+  setMsg(G.cur,'info', msg || `तुम्हारी बारी! ${CONTENT.lines.toss}`);
+  setMsg(1-G.cur,'info',`रुको — अभी ${P().name} की बारी है।`);
+  renderAll();
+}
+function afterToss(){
+  clearBadges();
+  const m=G.shooter; G.shooter=null; G.tossesLeft--;
+  const p=ringOf(m); log('toss_landed',{player:G.cur+1, ring:p?p.en:'outside', left:G.tossesLeft});
+  if (G.tossesLeft>0){ readyToAim(p ? `${p.value} वाले घेरे में! ${G.tossesLeft} बाकी।` : `बाहर! ${G.tossesLeft} बाकी।`); return; }
+  startCount();
+}
+
+/* ---------- COUNT: fill the place-value chart (in the active player's strip, board stays visible) ---------- */
+function startCount(){
+  G.state='count'; G.count={digits:Object.fromEntries(places().map(p=>[p.key,0])), wrong:0, revealed:false};
+  setMsg(G.cur,'info',CONTENT.lines.count); setMsg(1-G.cur,'info',`रुको — ${P().name} की गिनती चल रही है।`);
+  say('line.count',CONTENT.lines.count); log('count_start',{player:G.cur+1}); renderAll();
+}
+function stepDigit(key,d){ if (G.state!=='count' || G.count.revealed) return; const v=G.count.digits[key]; G.count.digits[key]=(v+d+10)%10; renderAll(); }
+function checkCount(){
+  const real=tally(), got=G.count.digits, ok=places().every(p=>got[p.key]===real[p.key]);
+  log('count_attempt',{player:G.cur+1, entered:{...got}, expected:real, correct:ok, tryNo:G.count.wrong+1});
+  if (ok){
+    P().score += CONTENT.rules.countPoints[G.count.revealed?1:0]; P().counts=real; P().number=numberOf(real);
+    setMsg(G.cur,'good',`${CONTENT.lines.praise} ${P().number} = ${expanded(P().number)}`); say('line.praise',CONTENT.lines.praise);
+    log('number_made',{player:G.cur+1, number:P().number, expanded:expanded(P().number)});
+    renderAll(); setTimeout(()=>sayNumber(), 700); return;
+  }
+  G.count.wrong++;
+  if (G.count.wrong<2){ setMsg(G.cur,'bad',CONTENT.lines.retry); say('line.retry',CONTENT.lines.retry); }
+  else { G.reveal=true; G.count.revealed=true; G.count.digits={...real}; setMsg(G.cur,'info',`${CONTENT.lines.reveal} जाँचो दबाओ।`); say('line.reveal',CONTENT.lines.reveal); }
+  renderAll();
+}
+
+/* ---------- SAY the number (simulated on-device speech; panel on the active player's half) ---------- */
+let sayResolve=null, sayTries=0, sayText=null, sayBusy=false, sayAlt=null;
+function sayNumber(){
+  const n=P().number; sayText=String(n); sayAlt=String(nearNumber(n)); /* Hindi version: numbers stay numerals; the model returns the digits it heard */ sayTries=0; sayBusy=false;
+  $('sayWho').textContent=`${P().name}, तुम्हारी संख्या`; $('sayCoin').textContent=n; $('sayCoin').classList.add('num'); $('sayTitle').textContent=`${CONTENT.lines.sayIt} ${n}`;
+  setSayStage('idle'); setStatus('','माइक दबाओ और बोलो');
+  setMsg(1-G.cur,'info',`रुको — ${P().name} संख्या बोलेंगे।`);
+  $('ovSay').classList.toggle('p2',G.cur===1); $('ovSay').classList.remove('hidden'); G.state='say'; renderAll();
+  say('line.sayIt',CONTENT.lines.sayIt);
+}
+function setStatus(cls,html){ const s=$('sayStatus'); s.className=cls; s.innerHTML=html; }
+let waveTimer=null;
+function setSayStage(stage){
+  $('micWrap').className='micWrap'+(stage==='listening'?' listening':stage==='checking'?' checking':'');
+  clearInterval(waveTimer); const wave=$('wave'); if (!wave.children.length) for(let i=0;i<13;i++) wave.appendChild(document.createElement('i'));
+  [...wave.children].forEach(b=>b.style.height='5px');
+  if (stage==='listening'){ setStatus('','सुन रहे हैं…'); waveTimer=setInterval(()=>[...wave.children].forEach((b,i)=>b.style.height=(5+Math.random()*24*Math.sin(Math.PI*(i+1)/14))+'px'),90); }
+  if (stage==='checking') setStatus('','<span class="spinner"></span>जाँच रहे हैं…');
+}
+async function listen(force){
+  if (sayBusy) return; sayBusy=true;
+  if (force===undefined){ if (G.demoMode==='tap') force=true; else if (G.demoMode==='fail') force=false; }
+  const res=await recogniseSpeech(sayText,{onStage:setSayStage, force, nearMiss:sayAlt});
+  setSayStage('done'); sayTries++;
+  log('say_attempt',{player:G.cur+1, expected:sayText, heard:res.heard, correct:res.correct, confidence:res.confidence, tryNo:sayTries});
+  if (res.correct){ setStatus('ok',`सुना: ${res.heard} ✓<br><span style="font-size:15px">${P().number} = ${expanded(P().number)}</span>`); say('line.praise',CONTENT.lines.praise); setTimeout(()=>finishSay('model'),1400); }
+  else { sayBusy=false;
+    if (sayTries<2){ setStatus('no',`सुना: ${res.heard} — ${CONTENT.lines.retry}`); say('line.retry',CONTENT.lines.retry); }
+    else { setStatus('no',`${CONTENT.lines.sayModel} <b>${sayText}</b>। मेरे साथ बोलो!`); say('num.'+P().number,`${CONTENT.lines.sayModel} ${sayText}`); } }
+}
+function finishSay(via){
+  P().score+=CONTENT.rules.sayPoints; log('number_said',{player:G.cur+1, number:P().number, via, tries:sayTries});
+  $('ovSay').classList.add('hidden'); P().done=true;
+  setMsg(G.cur,'good',`${P().number} = ${expanded(P().number)}`); renderAll();
+  setTimeout(()=>{ if (G.players.every(p=>p.done)) endRound(); else { G.cur=1-G.cur; startTurn(); } }, 1200);
+}
+(function(){ const b=$('micBtn'); let t0=0, lp=null, fired=false;
+  b.addEventListener('pointerdown',e=>{ e.preventDefault(); if (sayBusy) return; t0=Date.now(); fired=false; lp=setTimeout(()=>{ fired=true; listen(false); },600); });
+  b.addEventListener('pointerup',()=>{ if (!t0) return; clearTimeout(lp); if (!fired && !sayBusy) listen(); t0=0; });
+  b.addEventListener('pointerleave',()=>{ clearTimeout(lp); t0=0; });
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+})();
+$('skipLink').onclick=()=>{ if (sayBusy) return; log('say_skip_adult',{player:G.cur+1, number:P().number}); finishSay('adult'); };
+const DEMO=[['tap','डेमो: टैप = ✓'],['random','डेमो: 85% सही'],['fail','डेमो: हमेशा ✗']];
+$('demoChip').onclick=()=>{ const i=(DEMO.findIndex(d=>d[0]===G.demoMode)+1)%DEMO.length; G.demoMode=DEMO[i][0]; $('demoChip').textContent=DEMO[i][1]; };
+
+/* ---------- Round end: split card readable from both ends ---------- */
+function showSplit(id, html, btnLabel, onNext){
+  const ov=$(id); const parts= id==='ovRound' ? ['roundTop','roundBottom'] : ['startTop','startBottom'];
+  parts.forEach(pid=>{ const c=$(pid); c.innerHTML=html+`<button class="btn primary">${btnLabel}</button>`; c.querySelector('.btn.primary').onclick=()=>{ ov.classList.add('hidden'); onNext(); }; });
+  ov.classList.remove('hidden');
+}
+function endRound(){
+  G.state='roundEnd'; try{ window.speechSynthesis && speechSynthesis.cancel(); }catch(e){}
+  const r=round(), [a,b]=G.players.map(p=>p.number); let winners, title, cmp;
+  if (r.type==='target'){ const da=Math.abs(a-r.target), db=Math.abs(b-r.target); winners = da===db?[0,1]:(da<db?[0]:[1]);
+    cmp=`लक्ष्य ${r.target}: खिलाड़ी 1 — ${da} दूर, खिलाड़ी 2 — ${db} दूर।`; }
+  else { winners = a===b?[0,1]:(a>b?[0]:[1]); cmp = a===b ? `${a} = ${b}` : (a>b?`${a} > ${b}`:`${a} < ${b}`); }
+  winners.forEach(w=>G.players[w].score+=CONTENT.rules.winPoints);
+  title = winners.length===2 ? 'बराबरी!' : (r.type==='target' ? `${G.players[winners[0]].name} सबसे पास!` : `${G.players[winners[0]].name} की संख्या बड़ी है!`);
+  const tog = (r.type==='target'?CONTENT.together.target:CONTENT.together.compare).replace('{target}', r.target);
+  log('round_end',{level:level().id, round:G.roundIdx+1, numbers:[a,b], winners:winners.map(w=>w+1), scores:G.players.map(p=>p.score)});
+  showSplit('ovRound', `<h2>${title}</h2>
+    <p><b style="color:${COLORS[0]}">खिलाड़ी 1: ${a}</b> = ${expanded(a)}<br><b style="color:${COLORS[1]}">खिलाड़ी 2: ${b}</b> = ${expanded(b)}</p>
+    <p style="font-size:20px;font-weight:700">${cmp}</p><div class="together">🤝 ${tog}</div>
+    <p style="font-size:13px">अंक — खिलाड़ी 1: ${G.players[0].score} · खिलाड़ी 2: ${G.players[1].score}</p>`, 'आगे', nextAfterRound);
+  say('line.round', `${title} ${tog}`); renderAll();
+}
+function nextAfterRound(){
+  if (G.roundIdx < level().rounds.length-1){ G.roundIdx++; startRound(); return; }
+  if (G.levelIdx < CONTENT.levels.length-1){ G.levelIdx++; G.roundIdx=0; log('level_up',{level:level().id});
+    showSplit('ovRound', `<h2>🎉 ${CONTENT.lines.levelUp} ${level().name}</h2><p>${level().instruction}</p>`, 'शुरू करो', startRound); say('instr.'+level().id, level().instruction); return; }
+  log('session_end',{scores:G.players.map(p=>p.score)});
+  showSplit('ovRound', `<h2>🏁 खेल खत्म!</h2><p>खिलाड़ी 1: ${G.players[0].score} · खिलाड़ी 2: ${G.players[1].score}</p><div class="together">🤝 साथ में खेलो: कागज़ पर 9 कंचों से सबसे बड़ी संख्या बनाओ।</div>`, 'फिर से खेलो', ()=>location.reload());
+}
+
+/* ---------- Physics ---------- */
+function bodies(){ return G.marbles; }
+function step(){
+  const bs=bodies();
+  for (let sub=0; sub<3; sub++){
+    bs.forEach(b=>{ b.x+=b.vx/3; b.y+=b.vy/3;
+      if (b.x<WALL+b.r){b.x=WALL+b.r;b.vx=-b.vx*0.45;} if (b.x>W-WALL-b.r){b.x=W-WALL-b.r;b.vx=-b.vx*0.45;}
+      if (b.y<WALL+b.r){b.y=WALL+b.r;b.vy=-b.vy*0.45;} if (b.y>W-WALL-b.r){b.y=W-WALL-b.r;b.vy=-b.vy*0.45;} });
+    for (let i=0;i<bs.length;i++) for (let j=i+1;j<bs.length;j++) collide(bs[i],bs[j]);
+  }
+  bs.forEach(b=>{ b.vx*=FRICTION; b.vy*=FRICTION; if (Math.hypot(b.vx,b.vy)<STOP){b.vx=0;b.vy=0;} });
+}
+function collide(a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy), min=a.r+b.r; if (d===0||d>=min) return;
+  const nx=dx/d, ny=dy/d, ov=(min-d)/2; a.x-=nx*ov; a.y-=ny*ov; b.x+=nx*ov; b.y+=ny*ov;
+  const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny; if (rv>0) return; const j=-BOUNCE*rv/(1/a.m+1/b.m);
+  a.vx-=j*nx/a.m; a.vy-=j*ny/a.m; b.vx+=j*nx/b.m; b.vy+=j*ny/b.m;
+}
+function moving(){ return bodies().some(b=>b.vx||b.vy); }
+
+/* ---------- Input: pull back and release, from either end ---------- */
+const cv=$('board'), ctx=cv.getContext('2d'); let scale=1;
+function toBoard(e){ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*W]; }
+cv.addEventListener('pointerdown',e=>{ if (G.state!=='aim') return; cv.setPointerCapture(e.pointerId); const [x,y]=toBoard(e); G.aim={sx:x,sy:y,x,y}; });
+cv.addEventListener('pointermove',e=>{ if (!G.aim) return; const [x,y]=toBoard(e); G.aim.x=x; G.aim.y=y; });
+cv.addEventListener('pointerup',()=>{ if (!G.aim) return; const a=G.aim; G.aim=null; const dx=a.sx-a.x, dy=a.sy-a.y, len=Math.hypot(dx,dy); if (len<20) return; shoot(Math.atan2(dy,dx), Math.min(len,320)/320); });
+function shoot(angle,power){
+  if (G.state!=='aim') return; const m=G.shooter;
+  m.vx=Math.cos(angle)*power*MAXV; m.vy=Math.sin(angle)*power*MAXV; G.marbles.push(m); G.state='moving';
+  log('toss',{player:G.cur+1, from:G.cur===0?'bottom':'top', n:level().marbles-G.tossesLeft+1, angle:+angle.toFixed(2), power:+power.toFixed(2)}); renderAll();
+}
+
+
+/* ---------- Ring labels: big numeral badge (1, 10, 100, 1000) with the word small underneath.
+   Drawn ABOVE the marbles; after every toss, any marble resting under a badge slides along its own ring
+   (same ring → same count) until the badge is clear. ---------- */
+const labelWord = p => (CONTENT.rules.showHindiTerm && p.hi) ? `${p.en} · ${p.hi}` : p.en;
+const BFONT = 'system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif';
+function badgeGeom(){
+  const R=radii(), pl=places(), four=level().rings>=4, sgn=G.cur===1?-1:1;
+  return R.map((r,i)=>{ const p=pl[pl.length-1-i], inner=i===0, big=(four&&inner)?44:(four?54:72), small=(four&&inner)?19:(four?22:27);
+    ctx.font=`900 ${big}px ${BFONT}`; const nw=ctx.measureText(String(p.value)).width;
+    ctx.font=`700 ${small}px ${BFONT}`; const ww=ctx.measureText(labelWord(p)).width;
+    const mid=i?(R[i-1]+r)/2:0, w=Math.max(nw,ww)+26, h=big*0.9+small+16;
+    return {p, word:labelWord(p), x:C.x, y:C.y+sgn*mid, w, h, big, small, inner}; });
+}
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function drawBadges(cnt){
+  badgeGeom().forEach(b=>{ ctx.save(); ctx.translate(b.x,b.y); if (G.cur===1) ctx.rotate(Math.PI); ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(0,0,0,.3)'; ctx.shadowBlur=8; ctx.fillStyle='rgba(255,250,235,.97)'; rr(-b.w/2,-b.h/2,b.w,b.h,16); ctx.fill(); ctx.shadowBlur=0;
+    ctx.strokeStyle='#3b2410'; ctx.lineWidth=4; ctx.stroke();
+    ctx.fillStyle='#1b120a'; ctx.font=`900 ${b.big}px ${BFONT}`; ctx.fillText(String(b.p.value), 0, -b.h/2+8+b.big*0.45);
+    ctx.fillStyle='#5a3a1a'; ctx.font=`700 ${b.small}px ${BFONT}`; ctx.fillText(b.word, 0, b.h/2-7-b.small/2);
+    if (cnt){ const cx = b.inner ? 0 : b.w/2+40, cy = b.inner ? -(b.h/2+36) : 0;
+      ctx.fillStyle='#e0a100'; ctx.beginPath(); ctx.arc(cx,cy,32,0,7); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.font=`900 40px ${BFONT}`; ctx.fillText(String(cnt[b.p.key]), cx, cy+2); }
+    ctx.restore(); });
+}
+function overBadge(B,m){ return B.some(b=>{ const cx=Math.max(b.x-b.w/2,Math.min(m.x,b.x+b.w/2)), cy=Math.max(b.y-b.h/2,Math.min(m.y,b.y+b.h/2)); return Math.hypot(m.x-cx,m.y-cy) < m.r+4; }); }
+function clearBadges(){
+  const B=badgeGeom(), R=radii();
+  G.marbles.forEach(m=>{ m.vx=0; m.vy=0; });   // everything has stopped: no drifting back under a badge
+  G.marbles.forEach(m=>{ if (!overBadge(B,m)) return;
+    let d=Math.hypot(m.x-C.x,m.y-C.y), ang=Math.atan2(m.y-C.y,m.x-C.x);
+    
+    const ri=R.findIndex(r=>d<=r), rin=ri>0?R[ri-1]:0, rout=R[ri];               // stay inside the same ring
+    const radii2=[d]; for (let q=12;q<=rout-rin;q+=12){ radii2.push(d-q, d+q); }
+    let done=false;
+    for (let k=0;k<=160 && !done;k++){ for (const sg of (k?[1,-1]:[1])){ const a=ang+sg*k*0.025;
+        for (const dd of radii2){ if (dd<=rin+2 || dd>=rout-2) continue; const t={x:C.x+Math.cos(a)*dd, y:C.y+Math.sin(a)*dd, r:m.r};
+          if (!overBadge(B,t) && !G.marbles.some(o=>o!==m && Math.hypot(o.x-t.x,o.y-t.y)<o.r+m.r-6)){ m.x=t.x; m.y=t.y; done=true; break; } }
+        if (done) break; } }
+    log('marble_nudged',{player:G.cur+1}); });
+}
+
+/* ---------- Drawing ---------- */
+const DIRT = Array.from({length:520}, (_,i)=>{ const r=Math.sin(i*12.9898)*43758.5453; const f=r-Math.floor(r); const g=Math.sin(i*78.233)*12345.678; const h=g-Math.floor(g);
+  return {x:f*W, y:h*W, s:1.5+((f*7)%1)*4, c:i%3===0?'rgba(70,40,15,.35)':(i%3===1?'rgba(255,235,200,.25)':'rgba(110,70,35,.4)')}; });
+function drawMarble(x,y,r,hue){
+  const g=ctx.createRadialGradient(x-r*.35,y-r*.35,r*.1,x,y,r); g.addColorStop(0,'#ffffff'); g.addColorStop(.3,hue); g.addColorStop(1,'#141420');
+  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x+r*.25,y+r*.3,r,r*.8,0,0,7); ctx.fill();
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.75)'; ctx.beginPath(); ctx.arc(x-r*.45,y-r*.5,r*.16,0,7); ctx.fill();
+}
+const BANDS=['rgba(255,236,200,.30)','rgba(255,236,200,.14)'];
+function resize(){ const w=Math.min(window.innerWidth,520), h=window.innerHeight; const s=Math.max(240,Math.min(w,h-2*162)); const dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.style.width=cv.style.height=s+'px'; cv.width=cv.height=Math.round(s*dpr); scale=cv.width/W; }
+function draw(){
+  ctx.setTransform(scale,0,0,scale,0,0);
+  ctx.fillStyle='#a8774a'; ctx.fillRect(0,0,W,W); DIRT.forEach(d=>{ ctx.fillStyle=d.c; ctx.beginPath(); ctx.arc(d.x,d.y,d.s,0,7); ctx.fill(); });
+  ctx.strokeStyle='rgba(60,35,15,.6)'; ctx.lineWidth=WALL*2; ctx.strokeRect(0,0,W,W);
+  const R=radii(), pl=places(), flip=G.cur===1, cnt = G.reveal ? tally() : null;
+  for (let i=R.length-1;i>=0;i--){ ctx.fillStyle=BANDS[i%2]; ctx.beginPath(); ctx.arc(C.x,C.y,R[i],0,7); ctx.fill(); ctx.fillStyle='rgba(168,119,74,.0)'; }
+  R.forEach(r=>{ ctx.strokeStyle='rgba(255,245,225,.9)'; ctx.lineWidth=7; ctx.setLineDash([24,8]); ctx.beginPath(); ctx.arc(C.x,C.y,r,0,7); ctx.stroke(); ctx.setLineDash([]); });
+  // ring labels are drawn after the marbles (drawBadges) so they are never hidden
+  [0,1].forEach(i=>{ const y=BASE[i], on=G.cur===i && G.state!=='start';
+    if (on){ ctx.fillStyle=i===0?'rgba(31,122,77,.25)':'rgba(181,70,43,.25)'; ctx.fillRect(90,y-42,820,84); }
+    ctx.strokeStyle=on?COLORS[i]:'rgba(255,240,215,.6)'; ctx.lineWidth=on?7:4; ctx.setLineDash([30,12]); ctx.beginPath(); ctx.moveTo(90,y); ctx.lineTo(910,y); ctx.stroke(); ctx.setLineDash([]); });
+  G.marbles.forEach(m=>drawMarble(m.x,m.y,m.r,COLORS[m.owner]));
+  drawBadges(cnt);
+  const s=G.shooter; if (s && G.state==='aim'){ drawMarble(s.x,s.y,s.r,COLORS[G.cur]); ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(s.x,s.y,s.r+5,0,7); ctx.stroke(); }
+  if (G.aim&&s){ const dx=G.aim.sx-G.aim.x, dy=G.aim.sy-G.aim.y, len=Math.min(Math.hypot(dx,dy),320);
+    if (len>20){ const a=Math.atan2(dy,dx); ctx.setLineDash([18,14]); ctx.strokeStyle='rgba(255,250,235,.9)'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(s.x+Math.cos(a)*len*2,s.y+Math.sin(a)*len*2); ctx.stroke(); ctx.setLineDash([]);
+      const by=G.cur===0?W-WALL-18:WALL+4; ctx.fillStyle='rgba(255,250,235,.9)'; ctx.fillRect(WALL+10,by,(len/320)*(W-2*WALL-20),14); } }
+}
+function renderAll(){
+  const lv=level(), r=round();
+  [0,1].forEach(i=>{ const p=G.players[i], s=S[i], me=G.cur===i && !['start','roundEnd'].includes(G.state);
+    s.el.classList.toggle('active',me); s.badge.textContent=me?'तुम्हारी बारी!':'रुको'; s.score.textContent=p.score;
+    s.tgt.textContent=taskText();
+    s.meta.textContent=`L${lv.id} R${G.roundIdx+1}/${lv.rounds.length}` + (me && ['aim','moving'].includes(G.state) ? ` · कंचे ${G.tossesLeft}` : '');
+    s.slider.classList.toggle('hidden', me && G.state==='count');
+    s.slider.disabled=!(me && G.state==='aim');
+    const area=s.area; area.innerHTML=''; s.ck.innerHTML=''; s.meta.classList.toggle('hidden', me && G.state==='count');
+    if (me && G.state==='count'){
+      const ch=document.createElement('div'); ch.className='chart';
+      places().slice().reverse().forEach(pp=>{ const col=document.createElement('div'); col.className='pcol'+(G.count.revealed?' rev':'');
+        col.innerHTML=`<div class="ph"><span class="pn">${pp.value}</span><small>${labelWord(pp)}</small></div><div class="pd"><button aria-label="कम">−</button><span class="dg">${G.count.digits[pp.key]}</span><button aria-label="ज़्यादा">+</button></div>`;
+        const [minus,plus]=col.querySelectorAll('button'); minus.onclick=()=>stepDigit(pp.key,-1); plus.onclick=()=>stepDigit(pp.key,1);
+        col.querySelector('.dg').onclick=()=>stepDigit(pp.key,1); ch.appendChild(col); });
+      const ck=document.createElement('button'); ck.className='btn primary chartBtn'; ck.textContent='जाँचो ✓'; ck.onclick=checkCount; s.ck.appendChild(ck);
+      area.appendChild(ch);
+    } else {
+      const d=document.createElement('div'); d.className='result';
+      d.textContent = p.number!=null ? `संख्या: ${p.number} = ${expanded(p.number)}` : (me ? `${lv.marbles} कंचे घेरों में फेंको।` : '');
+      area.appendChild(d);
+    }
+  });
+}
+function loop(){ if (G.state==='moving'){ step(); if(!moving()){ G.state='settle'; setTimeout(afterToss,150); } } draw(); requestAnimationFrame(loop); }
+
+/* ---------- Start (split card) ---------- */
+function startCard(withLevels){
+  return `<h2>🎯 संख्या चक्र</h2>
+  <p>फ़ोन अपने बीच रखो। अपनी तरफ़ बैठो।</p>
+  <p style="font-size:15px;line-height:1.5">1 कंचे फेंको<br>2 हर घेरा <b>गिनो</b><br>3 तालिका भरो<br>4 संख्या <b>बोलो</b><br>5 बड़ी संख्या जीतती है!</p>
+  ${withLevels?'<div class="lvlpick"></div>':''}`;
+}
+showSplit('ovStart','', 'खेल शुरू करो', ()=>{ log('session_start',{level:level().id, voice:!!voice}); say('instr.'+level().id, level().instruction); startRound(); });
+$('startTop').insertAdjacentHTML('afterbegin',startCard(false)); $('startBottom').insertAdjacentHTML('afterbegin',startCard(true)+'<small class="note" id="voiceNote"></small>');
+const lp=$('startBottom').querySelector('.lvlpick');
+CONTENT.levels.forEach((lv,i)=>{ const b=document.createElement('button'); b.className='btn'+(i===0?' sel':''); b.textContent=`${lv.id}. ${lv.name}`; b.onclick=()=>{ G.levelIdx=i; [...lp.children].forEach((c,j)=>c.classList.toggle('sel',j===i)); renderAll(); }; lp.appendChild(b); });
+setTimeout(()=>{ const n=$('voiceNote'); if(!voice && n) n.textContent='इस फ़ोन में हिंदी आवाज़ नहीं है — खेल फिर भी चलेगा; लिखा हुआ पढ़ो।'; },800);
+window.addEventListener('resize',resize); resize(); renderAll(); loop();
+window.__game={G, shoot, step, CONTENT, tally, words, expanded, ringOf, BASE, C, radii, FRICTION, MAXV};   // test hook
+</script>
+</body>
+</html>
